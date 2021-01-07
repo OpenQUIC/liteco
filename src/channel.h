@@ -34,6 +34,7 @@ struct liteco_chan_s {
     liteco_array_t *queue;
     uint32_t head;
     uint32_t tail;
+    bool full;
 
     liteco_waiter_t w;
     liteco_waiter_t r;
@@ -45,6 +46,20 @@ struct liteco_chan_s {
     void (*co_ready) (void *const proc, liteco_co_t *const co);
     void *proc;
 };
+
+#define liteco_chan_queue_full(c) \
+    ((c)->head == (c)->tail && (c)->full)
+
+#define liteco_chan_queue_pop(c) \
+    (c)->head = ((c)->head + 1) % (c)->queue->ele_count; \
+    (c)->full = false
+
+#define liteco_chan_queue_empty(c) \
+    ((c)->head == (c)->tail && !(c)->full)
+
+#define liteco_chan_queue_push(c) \
+    (c)->tail = ((c)->tail + 1) % (c)->queue->ele_count; \
+    (c)->full = (c)->head == (c)->tail
 
 int liteco_chan_create(liteco_chan_t *const chan, uint32_t ele_count,
                        void (*co_ready) (void *const , liteco_co_t *const), void *const proc);

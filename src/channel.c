@@ -38,6 +38,7 @@ int liteco_chan_create(liteco_chan_t *const chan, uint32_t ele_count,
 
     chan->head = 0;
     chan->tail = 0;
+    chan->full = false;
 
     liteco_link_init(&chan->w);
     liteco_link_init(&chan->r);
@@ -110,9 +111,9 @@ static inline bool liteco_chan_w(liteco_chan_t *const chan, void *const ele) {
         return false;
     }
 
-    if (chan->queue) {
+    if (liteco_link_empty(&chan->r)) {
         *((void **) liteco_array_get(chan->queue, chan->tail)) = ele;
-        chan->tail = (chan->tail + 1) % chan->queue->ele_count;
+        liteco_chan_queue_push(chan);
     }
     else {
         liteco_waiter_t *r = liteco_link_next(&chan->r);
@@ -146,9 +147,9 @@ static inline bool liteco_chan_r(void **const ele_store, liteco_chan_t *const ch
         return false;
     }
 
-    if (chan->queue && chan->tail != chan->head) {
+    if (chan->queue && !liteco_chan_queue_empty(chan)) {
         *ele_store = *(void **) liteco_array_get(chan->queue, chan->head);
-        chan->head = (chan->head + 1) % chan->queue->ele_count;
+        liteco_chan_queue_pop(chan);
     }
     else {
         liteco_waiter_t *w = liteco_link_next(&chan->w);
@@ -170,8 +171,11 @@ static inline void liteco_chan_unlock(liteco_chan_t *const chan) {
 
 static inline bool liteco_chan_wblocked(liteco_chan_t *const chan) {
     if (chan->queue) {
-        // 如果存在队列，判断队列是否已满
-        return (chan->tail + 1) % chan->queue->ele_size == chan->head;
+        if (!liteco_link_empty(&chan->r)) {
+            // 如果存在待读取协程，则无需让出执行
+            return false;
+        }
+        return liteco_chan_queue_full(chan);
     }
     else {
         // 如果不存在队列，判断是否有等待读取的协程
@@ -181,8 +185,8 @@ static inline bool liteco_chan_wblocked(liteco_chan_t *const chan) {
 
 static inline bool liteco_chan_rblocked(liteco_chan_t *const chan) {
     if (chan->queue) {
-        // 如果存在队列，判断队列是否为空
-        return chan->tail == chan->head;
+        // 如果队列中存在数据，则无需让出执行
+        return liteco_chan_queue_empty(chan);
     }
     else {
         // 如果不存在队列，判断是否有等待写入的协程
