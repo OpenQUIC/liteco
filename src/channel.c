@@ -56,7 +56,7 @@ int liteco_chan_push(liteco_chan_t *const chan, void *const ele) {
     }
 
     liteco_chan_lock(chan);
-    while (!liteco_chan_w(chan, ele)) {
+    if (!liteco_chan_w(chan, ele)) {
         // 若不能写入，则当前协程应让出执行，并将当前协程记录在chan的等待写队列中
         liteco_chan_wblock(chan, ele);
         liteco_set_status(liteco_curr, liteco_status_running, liteco_status_waiting);
@@ -76,7 +76,7 @@ void *liteco_chan_pop(liteco_chan_t *const chan) {
 
     void *ret = NULL;
     liteco_chan_lock(chan);
-    while (!liteco_chan_r(&ret, chan)) {
+    if (!liteco_chan_r(&ret, chan)) {
         // 若不能读取，则当前协程应让出执行，并将当前协程记录在chan的等待读队列中
         liteco_chan_rblock(chan, &ret);
         liteco_set_status(liteco_curr, liteco_status_running, liteco_status_waiting);

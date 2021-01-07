@@ -22,7 +22,7 @@ struct liteco_array_s {
 #define liteco_array_get(arr, i) \
     ((arr)->payload + ((arr)->ele_size * (i)))
 
-liteco_array_t *liteco_array_create(uint32_t ele_count, uint32_t ele_size) {
+static inline liteco_array_t *liteco_array_create(uint32_t ele_count, uint32_t ele_size) {
     liteco_array_t *arr = malloc(sizeof(liteco_array_t) + ele_count * ele_size);
     if (!arr) {
         return NULL;
