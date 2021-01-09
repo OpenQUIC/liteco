@@ -10,6 +10,7 @@
 #define __LITECO_COROUTINE_H__
 
 #include "context.h"
+#include <pthread.h>
 
 typedef enum liteco_status_e liteco_status_t;
 enum liteco_status_e {
@@ -30,6 +31,7 @@ struct liteco_co_s {
     size_t st_size;
 
     liteco_status_t status;
+    pthread_mutex_t mtx;
 
     int (*fn) (void *const);
     void *arg;
@@ -50,5 +52,12 @@ void liteco_yield();
 
 void liteco_set_status(liteco_co_t *const co, const liteco_status_t from, const liteco_status_t to);
 
+static inline void liteco_co_lock(liteco_co_t *const co) {
+    pthread_mutex_lock(&co->mtx);
+}
+
+static inline void liteco_co_unlock(liteco_co_t *const co) {
+    pthread_mutex_unlock(&co->mtx);
+}
 
 #endif
