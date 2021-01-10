@@ -6,13 +6,20 @@
  *
  */
 
+#include "timer.h"
 #include "runtime.h"
 #include <malloc.h>
+#include <sys/eventfd.h>
+
+static void liteco_runtime_cb(liteco_emodule_t *const emodule);
+static inline void liteco_runtime_lock(liteco_runtime_t *const rt);
+static inline void liteco_runtime_unlock(liteco_runtime_t *const rt);
 
 int liteco_runtime_init(liteco_runtime_t *const rt) {
     pthread_mutex_init(&rt->mtx, NULL);
     liteco_link_init(&rt->rq);
-
+    rt->fd = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK | EFD_SEMAPHORE);
+    rt->cb = liteco_runtime_cb;
     return liteco_runtime_err_success;
 }
 
@@ -24,17 +31,18 @@ int liteco_runtime_join(liteco_runtime_t *const rt, liteco_co_t *const co) {
     liteco_link_init(rd);
     rd->co = co;
 
-    pthread_mutex_lock(&rt->mtx);
+    liteco_runtime_lock(rt);
     liteco_link_insert_before(&rt->rq, rd);
-    pthread_mutex_unlock(&rt->mtx);
+    eventfd_write(rt->fd, 1);
+    liteco_runtime_unlock(rt);
 
     return liteco_runtime_err_success;
 }
 
 liteco_co_t *liteco_runtime_pop(liteco_runtime_t *const rt) {
-    pthread_mutex_lock(&rt->mtx);
+    liteco_runtime_lock(rt);
     if (liteco_link_empty(&rt->rq)) {
-        pthread_mutex_unlock(&rt->mtx);
+        liteco_runtime_unlock(rt);
         return NULL;
     }
     liteco_ready_t *const rd = liteco_link_next(&rt->rq);
@@ -42,13 +50,38 @@ liteco_co_t *liteco_runtime_pop(liteco_runtime_t *const rt) {
 
     liteco_link_remove(rd);
     free(rd);
-    pthread_mutex_unlock(&rt->mtx);
+    liteco_runtime_unlock(rt);
 
     return co;
 }
 
 void liteco_runtime_readycb(void *const runtime_, liteco_co_t *const co) {
     liteco_runtime_t *const rt = runtime_;
+
+    if (co == liteco_timer_co) {
+        return;
+    }
+
     liteco_set_status(co, liteco_status_waiting, liteco_status_readying);
     liteco_runtime_join(rt, co);
+}
+
+static void liteco_runtime_cb(liteco_emodule_t *const emodule) {
+    liteco_runtime_t *const rt = (liteco_runtime_t *) emodule;
+
+    eventfd_t ret;
+    while (eventfd_read(rt->fd, &ret) == 0) {
+        liteco_co_t *const co = liteco_runtime_pop(rt);
+        if (co) {
+            liteco_resume(co);
+        }
+    }
+}
+
+static inline void liteco_runtime_lock(liteco_runtime_t *const rt) {
+    pthread_mutex_lock(&rt->mtx);
+}
+
+static inline void liteco_runtime_unlock(liteco_runtime_t *const rt) {
+    pthread_mutex_unlock(&rt->mtx);
 }

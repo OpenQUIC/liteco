@@ -7,6 +7,7 @@
  */
 
 #include "channel.h"
+#include "timer.h"
 
 static inline bool liteco_chan_wblocked(liteco_chan_t *const chan);
 static inline bool liteco_chan_rblocked(liteco_chan_t *const chan);
@@ -73,6 +74,26 @@ int liteco_chan_push(liteco_chan_t *const chan, void *const ele, const bool bloc
         }
         else {
             ret = liteco_chan_err_push_failed;
+        }
+    }
+    liteco_chan_unlock(chan);
+
+    return ret;
+}
+
+int liteco_timerchan_expired(liteco_chan_t *const chan) {
+    if (chan->closed) {
+        return liteco_chan_err_closed;
+    }
+
+    int ret = liteco_chan_err_success;
+    liteco_chan_lock(chan);
+    if (!liteco_chan_w(chan, NULL)) {
+        liteco_waiter_t *w = malloc(sizeof(liteco_waiter_t));
+        if (w) {
+            w->co = liteco_timer_co;
+            w->select = false;
+            liteco_link_insert_after(&chan->w, w);
         }
     }
     liteco_chan_unlock(chan);

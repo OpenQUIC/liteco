@@ -9,8 +9,9 @@
 #ifndef __LITECO_RUNTIME_H__
 #define __LITECO_RUNTIME_H__
 
-#include "coroutine.h"
 #include "link.h"
+#include "coroutine.h"
+#include "emodule.h"
 #include <pthread.h>
 
 #define liteco_runtime_err_internal_error -1001
@@ -25,8 +26,9 @@ struct liteco_ready_s {
 
 typedef struct liteco_runtime_s liteco_runtime_t;
 struct liteco_runtime_s {
-    pthread_mutex_t mtx;
+    LITECO_EMODULE_FIELD
 
+    pthread_mutex_t mtx;
     liteco_ready_t rq;
 };
 
