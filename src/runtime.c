@@ -15,6 +15,9 @@ static void liteco_runtime_cb(liteco_emodule_t *const emodule);
 static inline void liteco_runtime_lock(liteco_runtime_t *const rt);
 static inline void liteco_runtime_unlock(liteco_runtime_t *const rt);
 
+uint8_t joinignore_co;
+liteco_co_t *const liteco_joinignore_co = (liteco_co_t *) &joinignore_co;
+
 int liteco_runtime_init(liteco_runtime_t *const rt) {
     pthread_mutex_init(&rt->mtx, NULL);
     liteco_link_init(&rt->rq);
@@ -58,7 +61,7 @@ liteco_co_t *liteco_runtime_pop(liteco_runtime_t *const rt) {
 void liteco_runtime_readycb(void *const runtime_, liteco_co_t *const co) {
     liteco_runtime_t *const rt = runtime_;
 
-    if (co == liteco_timer_co) {
+    if (co == liteco_joinignore_co) {
         return;
     }
 

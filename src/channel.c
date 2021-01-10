@@ -7,7 +7,7 @@
  */
 
 #include "channel.h"
-#include "timer.h"
+#include "runtime.h"
 
 static inline bool liteco_chan_wblocked(liteco_chan_t *const chan);
 static inline bool liteco_chan_rblocked(liteco_chan_t *const chan);
@@ -81,20 +81,36 @@ int liteco_chan_push(liteco_chan_t *const chan, void *const ele, const bool bloc
     return ret;
 }
 
-int liteco_timerchan_expired(liteco_chan_t *const chan) {
+int liteco_chan_unenforceable_push(liteco_chan_t *const chan, void *const ele) {
     if (chan->closed) {
         return liteco_chan_err_closed;
     }
 
     int ret = liteco_chan_err_success;
     liteco_chan_lock(chan);
-    if (!liteco_chan_w(chan, NULL)) {
+    if (!liteco_chan_w(chan, ele)) {
         liteco_waiter_t *w = malloc(sizeof(liteco_waiter_t));
         if (w) {
-            w->co = liteco_timer_co;
+            w->co = liteco_joinignore_co;
+            w->ele.s_ele = ele;
             w->select = false;
             liteco_link_insert_after(&chan->w, w);
         }
+    }
+    liteco_chan_unlock(chan);
+
+    return ret;
+}
+
+void *liteco_chan_unenforceable_pop(liteco_chan_t *const chan) {
+    if (chan->closed) {
+        return liteco_chan_pop_failed;
+    }
+
+    void *ret = NULL;
+    liteco_chan_lock(chan);
+    if (!liteco_chan_r(&ret, chan)) {
+        ret = liteco_chan_pop_failed;
     }
     liteco_chan_unlock(chan);
 
@@ -114,7 +130,7 @@ void *liteco_chan_pop(liteco_chan_t *const chan, const bool blocked) {
     if (!liteco_chan_r(&ret, chan)) {
         if (blocked) {
             // 若不能读取，则当前协程应让出执行，并将当前协程记录在chan的等待读队列中
-            liteco_chan_rblock(chan, &ret, NULL);
+            liteco_chan_rblock(chan, &ret, false);
             liteco_set_status(liteco_curr, liteco_status_running, liteco_status_waiting);
             liteco_chan_unlock(chan);
             liteco_yield();

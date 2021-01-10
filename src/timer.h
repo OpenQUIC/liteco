@@ -24,8 +24,6 @@ struct liteco_timer_s {
     liteco_chan_t chan;
 };
 
-extern liteco_co_t *const liteco_timer_co;
-
 int liteco_timer_create(liteco_timer_t *const timer, void (*co_ready) (void *const, liteco_co_t *const), void *const proc);
 int liteco_timer_set(liteco_timer_t *const timer, const uint64_t timeout, const uint64_t interval);
 

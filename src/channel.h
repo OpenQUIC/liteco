@@ -70,7 +70,8 @@ extern void *const liteco_chan_pop_failed;
 int liteco_chan_push(liteco_chan_t *const chan, void *const ele, const bool blocked);
 void *liteco_chan_pop(liteco_chan_t *const chan, const bool blocked);
 
-int liteco_timerchan_expired(liteco_chan_t *const chan);
+int liteco_chan_unenforceable_push(liteco_chan_t *const chan, void *const ele);
+void *liteco_chan_unenforceable_pop(liteco_chan_t *const chan);
 
 typedef enum liteco_casetype_e liteco_casetype_t;
 enum liteco_casetype_e {

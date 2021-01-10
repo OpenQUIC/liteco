@@ -11,9 +11,6 @@
 
 static void liteco_timer_cb(liteco_emodule_t *const emodule);
 
-uint8_t timer_co;
-liteco_co_t *const liteco_timer_co = (liteco_co_t *) &timer_co;
-
 int liteco_timer_create(liteco_timer_t *const timer, void (*co_ready) (void *const, liteco_co_t *const), void *const proc) {
     timer->fd = timerfd_create(CLOCK_REALTIME, TFD_CLOEXEC | TFD_NONBLOCK);
     timer->cb = liteco_timer_cb;
@@ -45,6 +42,6 @@ static void liteco_timer_cb(liteco_emodule_t *const emodule) {
 
     uint64_t exp;
     while (read(timer->fd, &exp, sizeof(uint64_t)) == sizeof(uint64_t) && exp == 1) {
-        liteco_timerchan_expired(&timer->chan);
+        liteco_chan_unenforceable_push(&timer->chan, NULL);
     }
 }

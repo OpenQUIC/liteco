@@ -17,6 +17,8 @@
 #define liteco_runtime_err_internal_error -1001
 #define liteco_runtime_err_success 0
 
+extern liteco_co_t *const liteco_joinignore_co;
+
 typedef struct liteco_ready_s liteco_ready_t;
 struct liteco_ready_s {
     LITECO_LINKNODE_BASE
