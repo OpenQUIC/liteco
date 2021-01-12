@@ -11,6 +11,7 @@
 
 #include "emodule.h"
 #include "channel.h"
+#include "eloop.h"
 #include <netinet/in.h>
 
 #define liteco_udp_err_internal_error -1001
@@ -38,18 +39,14 @@ typedef struct liteco_udp_s liteco_udp_t;
 struct liteco_udp_s {
     LITECO_EMODULE_FIELD
 
-    liteco_chan_t schan;
-    liteco_chan_t rchan;
+    liteco_chan_t *rchan;
 
-    int (*recvalloc_cb) (liteco_udp_pkt_t **const, liteco_udp_t *const);
+    int (*alloc_cb) (liteco_udp_pkt_t **const, liteco_udp_t *const);
 };
 
-int liteco_udp_create(liteco_udp_t *const udp,
-                      const uint32_t rcount, const uint32_t scount,
-                      void (*co_ready) (void *const, liteco_co_t *const), void *const proc);
-int liteco_udp_set_recvalloc(liteco_udp_t *const udp, int (*alloc_cb) (liteco_udp_pkt_t **const, liteco_udp_t *const));
+int liteco_udp_init(liteco_eloop_t *const eloop, liteco_udp_t *const udp, int sa_family);
+int liteco_udp_set_recv(liteco_udp_t *const udp, int (*alloc_cb) (liteco_udp_pkt_t **const, liteco_udp_t *const), liteco_chan_t *const rchan);
 int liteco_udp_bind(liteco_udp_t *const udp, const struct sockaddr *const sockaddr, const socklen_t socklen);
-int liteco_udp_send(liteco_udp_t *const udp, liteco_udp_pkt_t *const pkt);
 int liteco_udp_sendto(liteco_udp_t *const udp,
                       const struct sockaddr *const sockaddr, socklen_t socklen,
                       const void *const data, const uint32_t datalen);

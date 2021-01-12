@@ -12,26 +12,21 @@
 
 static void liteco_udp_cb(liteco_emodule_t *const emodule);
 
-int liteco_udp_create(liteco_udp_t *const udp,
-                      const uint32_t rcount, const uint32_t scount,
-                      void (*co_ready) (void *const, liteco_co_t *const), void *const proc) {
-
-    udp->fd = -1;
+int liteco_udp_init(liteco_eloop_t *const eloop, liteco_udp_t *const udp, int sa_family) {
+    udp->fd = socket(sa_family, SOCK_DGRAM, 0);
+    if (udp->fd == -1) {
+        return liteco_udp_err_internal_error;
+    }
+    udp->rchan = NULL;
     udp->cb = liteco_udp_cb;
-    udp->recvalloc_cb = NULL;
+    udp->alloc_cb = NULL;
 
-    liteco_chan_create(&udp->rchan, rcount, co_ready, proc);
-    liteco_chan_create(&udp->schan, scount, co_ready, proc);
+    liteco_epoll_add(&eloop->events, (liteco_emodule_t *) udp, EPOLLET | EPOLLIN);
 
     return liteco_udp_err_success;
 }
 
 int liteco_udp_bind(liteco_udp_t *const udp, const struct sockaddr *const sockaddr, const socklen_t socklen) {
-    udp->fd = socket(sockaddr->sa_family, SOCK_DGRAM, 0);
-    if (udp->fd == -1) {
-        return liteco_udp_err_internal_error;
-    }
-
     int flags = fcntl(udp->fd, F_GETFL);
     fcntl(udp->fd, F_SETFL, flags | O_NONBLOCK);
 
@@ -39,10 +34,6 @@ int liteco_udp_bind(liteco_udp_t *const udp, const struct sockaddr *const sockad
         return liteco_udp_err_internal_error;
     }
     return liteco_udp_err_success;
-}
-
-int liteco_udp_send(liteco_udp_t *const udp, liteco_udp_pkt_t *const pkt) {
-    return liteco_chan_unenforceable_push(&udp->schan, pkt);
 }
 
 int liteco_udp_sendto(liteco_udp_t *const udp,
@@ -55,8 +46,9 @@ int liteco_udp_sendto(liteco_udp_t *const udp,
     return liteco_udp_err_success;
 }
 
-int liteco_udp_set_recvalloc(liteco_udp_t *const udp, int (*alloc_cb) (liteco_udp_pkt_t **const, liteco_udp_t *const)) {
-    udp->recvalloc_cb = alloc_cb;
+int liteco_udp_set_recv(liteco_udp_t *const udp, int (*alloc_cb) (liteco_udp_pkt_t **const, liteco_udp_t *const), liteco_chan_t *const rchan) {
+    udp->alloc_cb = alloc_cb;
+    udp->rchan = rchan;
 
     return liteco_udp_err_success;
 }
@@ -64,9 +56,13 @@ int liteco_udp_set_recvalloc(liteco_udp_t *const udp, int (*alloc_cb) (liteco_ud
 static void liteco_udp_cb(liteco_emodule_t *const emodule) {
     liteco_udp_t *const udp = (liteco_udp_t *) emodule;
 
+    if (!udp->rchan || !udp->alloc_cb) {
+        return;
+    }
+
     for ( ;; ) {
         liteco_udp_pkt_t *pkt;
-        if (udp->recvalloc_cb(&pkt, udp) != liteco_udp_err_success) {
+        if (udp->alloc_cb(&pkt, udp) != liteco_udp_err_success) {
             return;
         }
         socklen_t socklen = 0;
@@ -77,7 +73,7 @@ static void liteco_udp_cb(liteco_emodule_t *const emodule) {
         }
         pkt->len = ret;
 
-        if (liteco_chan_unenforceable_push(&udp->rchan, pkt) != liteco_chan_err_success) {
+        if (liteco_chan_unenforceable_push(udp->rchan, pkt) != liteco_chan_err_success) {
             pkt->recovery(pkt);
             return;
         }

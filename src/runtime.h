@@ -12,6 +12,7 @@
 #include "link.h"
 #include "coroutine.h"
 #include "emodule.h"
+#include "eloop.h"
 #include <pthread.h>
 
 #define liteco_runtime_err_internal_error -1001
@@ -34,7 +35,7 @@ struct liteco_runtime_s {
     liteco_ready_t rq;
 };
 
-int liteco_runtime_init(liteco_runtime_t *const rt);
+int liteco_runtime_init(liteco_eloop_t *const eloop, liteco_runtime_t *const rt);
 int liteco_runtime_join(liteco_runtime_t *const rt, liteco_co_t *const co);
 liteco_co_t *liteco_runtime_pop(liteco_runtime_t *const rt);
 

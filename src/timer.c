@@ -11,16 +11,18 @@
 
 static void liteco_timer_cb(liteco_emodule_t *const emodule);
 
-int liteco_timer_create(liteco_timer_t *const timer, void (*co_ready) (void *const, liteco_co_t *const), void *const proc) {
+int liteco_timer_init(liteco_eloop_t *const eloop, liteco_timer_t *const timer, liteco_chan_t *const chan) {
     timer->fd = timerfd_create(CLOCK_REALTIME, TFD_CLOEXEC | TFD_NONBLOCK);
     timer->cb = liteco_timer_cb;
+    timer->chan = chan;
 
-    liteco_chan_create(&timer->chan, 0, co_ready, proc);
+    liteco_epoll_add(&eloop->events, (liteco_emodule_t *) timer, EPOLLIN | EPOLLET);
+
 
     return liteco_timer_err_success;
 }
 
-int liteco_timer_set(liteco_timer_t *const timer, const uint64_t timeout, const uint64_t interval) {
+int liteco_timer_expire(liteco_timer_t *const timer, const uint64_t timeout, const uint64_t interval) {
     struct itimerspec spec = {
         .it_value = {
             .tv_sec = timeout / (1000 * 1000),
@@ -42,6 +44,6 @@ static void liteco_timer_cb(liteco_emodule_t *const emodule) {
 
     uint64_t exp;
     while (read(timer->fd, &exp, sizeof(uint64_t)) == sizeof(uint64_t) && exp == 1) {
-        liteco_chan_unenforceable_push(&timer->chan, NULL);
+        liteco_chan_unenforceable_push(timer->chan, NULL);
     }
 }
