@@ -86,7 +86,6 @@ int liteco_chan_unenforceable_push(liteco_chan_t *const chan, void *const ele) {
         return liteco_chan_err_closed;
     }
 
-    int ret = liteco_chan_err_success;
     liteco_chan_lock(chan);
     if (!liteco_chan_w(chan, ele)) {
         liteco_waiter_t *w = malloc(sizeof(liteco_waiter_t));
@@ -99,7 +98,7 @@ int liteco_chan_unenforceable_push(liteco_chan_t *const chan, void *const ele) {
     }
     liteco_chan_unlock(chan);
 
-    return ret;
+    return liteco_chan_err_success;
 }
 
 void *liteco_chan_unenforceable_pop(liteco_chan_t *const chan) {
