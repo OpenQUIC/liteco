@@ -47,4 +47,7 @@ struct liteco_linknode_s {
     (p)->next->prev = (p)->prev; \
     (p)->prev->next = (p)->next
 
+#define liteco_link_foreach(e, l) \
+    for ((e) = liteco_link_next((l)); (e) != (l); (e) = liteco_link_next((e)))
+
 #endif
