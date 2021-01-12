@@ -9,6 +9,7 @@
 #ifndef __LITECO_EPOLL_H__
 #define __LITECO_EPOLL_H__
 
+#include "link.h"
 #include "emodule.h"
 #include <sys/epoll.h>
 

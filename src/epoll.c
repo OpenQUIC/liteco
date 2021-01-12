@@ -26,7 +26,7 @@ int liteco_epoll_run(liteco_epoll_t *const epoll, const int timeout) {
 
     int events_count = epoll_wait(epoll->fd, events, LITECO_EPOLL_MAX_EVENT_COUNT, timeout);
     if (events_count == -1) {
-        return liteco_epoll_err_internal_error;
+        return events_count;
     }
 
     int i;
@@ -35,5 +35,5 @@ int liteco_epoll_run(liteco_epoll_t *const epoll, const int timeout) {
         m->cb(m);
     }
 
-    return liteco_epoll_err_success;
+    return events_count;
 }
