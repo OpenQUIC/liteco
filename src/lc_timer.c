@@ -6,7 +6,7 @@
  *
  */
 
-#include "timer.h"
+#include "lc_timer.h"
 #include <unistd.h>
 
 static void liteco_timer_cb(liteco_emodule_t *const emodule);

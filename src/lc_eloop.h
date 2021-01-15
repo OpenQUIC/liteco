@@ -9,10 +9,10 @@
 #ifndef __LITECO_LOOP_H__
 #define __LITECO_LOOP_H__
 
-#include "link.h"
-#include "emodule.h"
+#include "lc_link.h"
+#include "lc_emodule.h"
 
-#include "epoll.h"
+#include "lc_epoll.h"
 
 #define liteco_idle_err_success 0
 

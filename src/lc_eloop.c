@@ -6,7 +6,7 @@
  *
  */
 
-#include "eloop.h"
+#include "lc_eloop.h"
 #include <stdbool.h>
 #include <stddef.h>
 

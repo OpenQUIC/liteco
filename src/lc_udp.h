@@ -9,9 +9,9 @@
 #ifndef __LITECO_UDP_H__
 #define __LITECO_UDP_H__
 
-#include "emodule.h"
-#include "channel.h"
-#include "eloop.h"
+#include "lc_emodule.h"
+#include "lc_channel.h"
+#include "lc_eloop.h"
 #include <netinet/in.h>
 
 #define liteco_udp_err_internal_error -1001

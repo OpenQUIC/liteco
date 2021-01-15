@@ -6,7 +6,7 @@
  *
  */
 
-#include "coroutine.h"
+#include "lc_coroutine.h"
 #include <sys/time.h>
 #include <sched.h>
 

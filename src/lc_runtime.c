@@ -6,8 +6,8 @@
  *
  */
 
-#include "timer.h"
-#include "runtime.h"
+#include "lc_timer.h"
+#include "lc_runtime.h"
 #include <malloc.h>
 #include <sys/eventfd.h>
 

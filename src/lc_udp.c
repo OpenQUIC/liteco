@@ -6,8 +6,8 @@
  *
  */
 
-#include "udp.h"
-#include "runtime.h"
+#include "lc_udp.h"
+#include "lc_runtime.h"
 #include <fcntl.h>
 
 static void liteco_udp_cb(liteco_emodule_t *const emodule);

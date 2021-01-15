@@ -9,10 +9,10 @@
 #ifndef __LITECO_TIMER_H__
 #define __LITECO_TIMER_H__
 
-#include "coroutine.h"
-#include "emodule.h"
-#include "channel.h"
-#include "eloop.h"
+#include "lc_coroutine.h"
+#include "lc_emodule.h"
+#include "lc_channel.h"
+#include "lc_eloop.h"
 #include <stdint.h>
 #include <sys/timerfd.h>
 

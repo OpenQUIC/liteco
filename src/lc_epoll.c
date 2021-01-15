@@ -6,7 +6,7 @@
  *
  */
 
-#include "epoll.h"
+#include "lc_epoll.h"
 
 int liteco_epoll_init(liteco_epoll_t *const epoll) {
     epoll->fd = epoll_create(LITECO_EPOLL_MAX_EVENT_COUNT);

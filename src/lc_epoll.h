@@ -9,8 +9,8 @@
 #ifndef __LITECO_EPOLL_H__
 #define __LITECO_EPOLL_H__
 
-#include "link.h"
-#include "emodule.h"
+#include "lc_link.h"
+#include "lc_emodule.h"
 #include <sys/epoll.h>
 
 #define LITECO_EPOLL_MAX_EVENT_COUNT 32

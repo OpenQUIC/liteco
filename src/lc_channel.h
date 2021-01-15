@@ -9,9 +9,9 @@
 #ifndef __LITECO_CHANNEL_H__
 #define __LITECO_CHANNEL_H__
 
-#include "array.h"
-#include "link.h"
-#include "coroutine.h"
+#include "lc_array.h"
+#include "lc_link.h"
+#include "lc_coroutine.h"
 #include <pthread.h>
 
 #define liteco_chan_err_closed -1001

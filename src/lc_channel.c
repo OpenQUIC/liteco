@@ -6,8 +6,8 @@
  *
  */
 
-#include "channel.h"
-#include "runtime.h"
+#include "lc_channel.h"
+#include "lc_runtime.h"
 
 static inline bool liteco_chan_wblocked(liteco_chan_t *const chan);
 static inline bool liteco_chan_rblocked(liteco_chan_t *const chan);

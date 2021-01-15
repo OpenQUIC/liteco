@@ -9,10 +9,10 @@
 #ifndef __LITECO_RUNTIME_H__
 #define __LITECO_RUNTIME_H__
 
-#include "link.h"
-#include "coroutine.h"
-#include "emodule.h"
-#include "eloop.h"
+#include "lc_link.h"
+#include "lc_coroutine.h"
+#include "lc_emodule.h"
+#include "lc_eloop.h"
 #include <pthread.h>
 
 #define liteco_runtime_err_internal_error -1001

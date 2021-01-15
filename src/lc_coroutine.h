@@ -9,7 +9,7 @@
 #ifndef __LITECO_COROUTINE_H__
 #define __LITECO_COROUTINE_H__
 
-#include "context.h"
+#include "lc_context.h"
 #include <pthread.h>
 
 typedef enum liteco_status_e liteco_status_t;
