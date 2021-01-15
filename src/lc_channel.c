@@ -81,6 +81,31 @@ int liteco_chan_push(liteco_chan_t *const chan, void *const ele, const bool bloc
     return ret;
 }
 
+int liteco_chan_close(liteco_chan_t *const chan) {
+    if (chan->closed) {
+        return liteco_chan_err_success;
+    }
+
+    liteco_chan_lock(chan);
+    chan->closed = true;
+
+    while (!liteco_link_empty(&chan->w)) {
+        liteco_waiter_t *w = liteco_link_next(&chan->w);
+        liteco_link_remove(w);
+        chan->co_ready(chan->proc, w->co);
+        free(w);
+    }
+    while (!liteco_link_empty(&chan->r)) {
+        liteco_waiter_t *r = liteco_link_next(&chan->r);
+        liteco_link_remove(r);
+        chan->co_ready(chan->proc, r->co);
+        free(r);
+    }
+
+    liteco_chan_unlock(chan);
+    return liteco_chan_err_success;
+}
+
 int liteco_chan_unenforceable_push(liteco_chan_t *const chan, void *const ele) {
     if (chan->closed) {
         return liteco_chan_err_closed;
@@ -405,6 +430,9 @@ static inline void liteco_chan_unlock(liteco_chan_t *const chan) {
 }
 
 static inline bool liteco_chan_wblocked(liteco_chan_t *const chan) {
+    if (chan->closed) {
+        return false;
+    }
     if (!liteco_link_empty(&chan->r)) {
         return false;
     }
@@ -416,6 +444,9 @@ static inline bool liteco_chan_wblocked(liteco_chan_t *const chan) {
 }
 
 static inline bool liteco_chan_rblocked(liteco_chan_t *const chan) {
+    if (chan->closed) {
+        return false;
+    }
     if (!liteco_link_empty(&chan->w)) {
         return false;
     }
