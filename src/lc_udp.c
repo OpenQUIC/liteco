@@ -17,6 +17,9 @@ int liteco_udp_init(liteco_eloop_t *const eloop, liteco_udp_t *const udp, int sa
     if (udp->fd == -1) {
         return liteco_udp_err_internal_error;
     }
+    int flags = fcntl(udp->fd, F_GETFL);
+    fcntl(udp->fd, F_SETFL, flags | O_NONBLOCK);
+
     udp->rchan = NULL;
     udp->cb = liteco_udp_cb;
     udp->alloc_cb = NULL;
@@ -27,9 +30,6 @@ int liteco_udp_init(liteco_eloop_t *const eloop, liteco_udp_t *const udp, int sa
 }
 
 int liteco_udp_bind(liteco_udp_t *const udp, const struct sockaddr *const sockaddr, const socklen_t socklen) {
-    int flags = fcntl(udp->fd, F_GETFL);
-    fcntl(udp->fd, F_SETFL, flags | O_NONBLOCK);
-
     if (bind(udp->fd, sockaddr, socklen) != 0) {
         return liteco_udp_err_internal_error;
     }
