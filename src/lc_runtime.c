@@ -29,17 +29,35 @@ int liteco_runtime_init(liteco_eloop_t *const eloop, liteco_runtime_t *const rt)
     return liteco_runtime_err_success;
 }
 
-int liteco_runtime_join(liteco_runtime_t *const rt, liteco_co_t *const co) {
+int liteco_runtime_join(liteco_runtime_t *const rt, liteco_co_t *const co, const bool single) {
+
+    liteco_runtime_lock(rt);
+    if (single) {
+        bool existed = false;
+        liteco_ready_t *check = NULL;
+        liteco_link_foreach(check, &rt->rq) {
+            if (check->co == co) {
+                existed = true;
+                break;
+            }
+        }
+        if (existed) {
+            liteco_runtime_unlock(rt);
+            return liteco_runtime_err_success;
+        }
+    }
+
     liteco_ready_t *rd = malloc(sizeof(liteco_ready_t));
     if (!rd) {
+        liteco_runtime_unlock(rt);
         return liteco_runtime_err_internal_error;
     }
     liteco_link_init(rd);
     rd->co = co;
 
-    liteco_runtime_lock(rt);
     liteco_link_insert_before(&rt->rq, rd);
     eventfd_write(rt->fd, 1);
+
     liteco_runtime_unlock(rt);
 
     return liteco_runtime_err_success;
@@ -61,7 +79,7 @@ liteco_co_t *liteco_runtime_pop(liteco_runtime_t *const rt) {
     return co;
 }
 
-void liteco_runtime_readycb(void *const runtime_, liteco_co_t *const co) {
+void liteco_runtime_readycb(void *const runtime_, liteco_co_t *const co, const bool single) {
     liteco_runtime_t *const rt = runtime_;
 
     if (co == liteco_joinignore_co) {
@@ -69,7 +87,7 @@ void liteco_runtime_readycb(void *const runtime_, liteco_co_t *const co) {
     }
 
     liteco_set_status(co, liteco_status_waiting, liteco_status_readying);
-    liteco_runtime_join(rt, co);
+    liteco_runtime_join(rt, co, single);
 }
 
 static void liteco_runtime_cb(liteco_emodule_t *const emodule) {

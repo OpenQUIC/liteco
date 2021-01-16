@@ -36,9 +36,9 @@ struct liteco_runtime_s {
 };
 
 int liteco_runtime_init(liteco_eloop_t *const eloop, liteco_runtime_t *const rt);
-int liteco_runtime_join(liteco_runtime_t *const rt, liteco_co_t *const co);
+int liteco_runtime_join(liteco_runtime_t *const rt, liteco_co_t *const co, const bool single);
 liteco_co_t *liteco_runtime_pop(liteco_runtime_t *const rt);
 
-void liteco_runtime_readycb(void *const runtime_, liteco_co_t *const co);
+void liteco_runtime_readycb(void *const runtime_, liteco_co_t *const co, const bool single);
 
 #endif

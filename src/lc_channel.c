@@ -27,7 +27,7 @@ static inline bool liteco_chan_r(void **const ele_store, liteco_chan_t *const ch
 static liteco_case_t *liteco_select_choose(liteco_case_t *const cases, const uint32_t count, const bool blocked);
 
 int liteco_chan_create(liteco_chan_t *const chan, uint32_t ele_count,
-                       void (*co_ready) (void *const, liteco_co_t *const),
+                       void (*co_ready) (void *const, liteco_co_t *const, const bool),
                        void *const proc) {
     if (ele_count == 0) {
         chan->queue = NULL;
@@ -92,13 +92,13 @@ int liteco_chan_close(liteco_chan_t *const chan) {
     while (!liteco_link_empty(&chan->w)) {
         liteco_waiter_t *w = liteco_link_next(&chan->w);
         liteco_link_remove(w);
-        chan->co_ready(chan->proc, w->co);
+        chan->co_ready(chan->proc, w->co, w->select);
         free(w);
     }
     while (!liteco_link_empty(&chan->r)) {
         liteco_waiter_t *r = liteco_link_next(&chan->r);
         liteco_link_remove(r);
-        chan->co_ready(chan->proc, r->co);
+        chan->co_ready(chan->proc, r->co, r->select);
         free(r);
     }
 
@@ -340,7 +340,7 @@ static inline bool liteco_chan_w(liteco_chan_t *const chan, void *const ele) {
             *r->ele.r_store = ele;
         }
         liteco_link_remove(r);
-        chan->co_ready(chan->proc, r->co);
+        chan->co_ready(chan->proc, r->co, select);
         free(r);
 
         return !select;
@@ -376,6 +376,7 @@ static int liteco_chan_rdblock(liteco_chan_t *const chan) {
             liteco_link_remove(curr);
             free(curr);
 
+
             curr = prev;
         }
     }
@@ -399,7 +400,7 @@ static inline bool liteco_chan_r(void **const ele_store, liteco_chan_t *const ch
             *ele_store = w->ele.s_ele;
         }
         liteco_link_remove(w);
-        chan->co_ready(chan->proc, w->co);
+        chan->co_ready(chan->proc, w->co, select);
         free(w);
 
         return !select;
@@ -416,7 +417,7 @@ static inline bool liteco_chan_r(void **const ele_store, liteco_chan_t *const ch
                 liteco_chan_queue_push(chan);
             }
             liteco_link_remove(w);
-            chan->co_ready(chan->proc, w->co);
+            chan->co_ready(chan->proc, w->co, select);
             free(w);
         }
 

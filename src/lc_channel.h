@@ -45,7 +45,7 @@ struct liteco_chan_s {
 
     pthread_mutex_t mtx;
 
-    void (*co_ready) (void *const proc, liteco_co_t *const co);
+    void (*co_ready) (void *const proc, liteco_co_t *const co, const bool single);
     void *proc;
 };
 
@@ -64,7 +64,7 @@ struct liteco_chan_s {
     (c)->full = (c)->head == (c)->tail
 
 int liteco_chan_create(liteco_chan_t *const chan, uint32_t ele_count,
-                       void (*co_ready) (void *const , liteco_co_t *const), void *const proc);
+                       void (*co_ready) (void *const , liteco_co_t *const, const bool), void *const proc);
 
 extern void *const liteco_chan_pop_failed;
 int liteco_chan_push(liteco_chan_t *const chan, void *const ele, const bool blocked);
