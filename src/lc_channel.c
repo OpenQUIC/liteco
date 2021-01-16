@@ -172,7 +172,7 @@ void *liteco_chan_pop(liteco_chan_t *const chan, const bool blocked) {
 static liteco_case_t *liteco_select_choose(liteco_case_t *const cases, const uint32_t count, const bool blocked) {
     uint32_t i;
     for (i = 0; i < count; i++) {
-        liteco_chan_lock(cases->chan);
+        liteco_chan_lock(cases[i].chan);
     }
     uint32_t avail = count;
     for (i = 0; i < count; i++) {
@@ -202,7 +202,7 @@ static liteco_case_t *liteco_select_choose(liteco_case_t *const cases, const uin
         return cases + avail;
     }
 
-    if (blocked) {
+    if (!blocked) {
         for (i = 0; i < count; i++) {
             liteco_chan_unlock(cases[i].chan);
         }
@@ -241,7 +241,7 @@ loop:
         }
     }
     for (i = 0; i < count; i++) {
-        switch (cases->type) {
+        switch (cases[i].type) {
         case liteco_casetype_push:
             if (!liteco_chan_wblocked(cases[i].chan)) {
                 avail = i;
@@ -272,6 +272,9 @@ loop:
 liteco_case_t *liteco_select(liteco_case_t *const cases, const uint32_t count, const bool blocked) {
     for ( ;; ) {
         liteco_case_t *const selected_case = liteco_select_choose(cases, count, blocked);
+        if (!selected_case) {
+            return NULL;
+        }
 
         int push_result = 0;
         switch (selected_case->type) {
