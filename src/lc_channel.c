@@ -176,7 +176,7 @@ static liteco_case_t *liteco_select_choose(liteco_case_t *const cases, const uin
     }
     uint32_t avail = count;
     for (i = 0; i < count; i++) {
-        switch (cases->type) {
+        switch (cases[i].type) {
         case liteco_casetype_push:
             if (!liteco_chan_wblocked(cases[i].chan)) {
                 avail = i;
