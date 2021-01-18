@@ -27,5 +27,6 @@ struct liteco_timer_s {
 
 int liteco_timer_init(liteco_eloop_t *const eloop, liteco_timer_t *const timer, liteco_chan_t *const chan);
 int liteco_timer_expire(liteco_timer_t *const timer, const uint64_t timeout, const uint64_t interval);
+int liteco_timer_close(liteco_timer_t *const timer);
 
 #endif

@@ -47,3 +47,9 @@ static void liteco_timer_cb(liteco_emodule_t *const emodule) {
         liteco_chan_unenforceable_push(timer->chan, NULL);
     }
 }
+
+int liteco_timer_close(liteco_timer_t *const timer) {
+    close(timer->fd);
+
+    return liteco_timer_err_success;
+}

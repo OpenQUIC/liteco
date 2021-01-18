@@ -106,6 +106,20 @@ int liteco_chan_close(liteco_chan_t *const chan) {
     return liteco_chan_err_success;
 }
 
+int liteco_chan_destory(liteco_chan_t *const chan) {
+    if (!chan->closed) {
+        return liteco_chan_err_internal_error;
+    }
+
+    pthread_mutex_destroy(&chan->mtx);
+    if (chan->queue) {
+        free(chan->queue);
+        chan->queue = NULL;
+    }
+
+    return liteco_chan_err_success;
+}
+
 int liteco_chan_unenforceable_push(liteco_chan_t *const chan, void *const ele) {
     if (chan->closed) {
         return liteco_chan_err_closed;
