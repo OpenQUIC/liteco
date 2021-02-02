@@ -8,6 +8,7 @@
 
 #include "lc_coroutine.h"
 #include <sys/time.h>
+#include <malloc.h>
 #include <sched.h>
 
 __thread liteco_co_t *liteco_curr = NULL;
@@ -15,22 +16,29 @@ __thread liteco_co_t *liteco_curr = NULL;
 static void liteco_run(void *const);
 static inline uint64_t liteco_now();
 
-int liteco_create(liteco_co_t *const co,
-                  int (*fn) (void *const), void *const arg,
-                  int (*finished_cb) (liteco_co_t *const),
-                  uint8_t *const st, const size_t st_size) {
+int liteco_create(liteco_co_t *const co, int (*fn) (void *const), void *const arg, uint8_t *const st, const size_t st_size) {
     co->p_ctx = NULL;
     co->fn = fn;
     co->arg = arg;
     co->status = liteco_status_starting;
-    co->finished_cb = finished_cb;
     co->st = st;
     co->st_size = st_size;
 
     liteco_context_init(&co->ctx, st, st_size, liteco_run, co);
     co->ret = 0;
 
+    liteco_stack_init(&co->finished);
+
     return 0;
+}
+
+void liteco_finished(liteco_co_t *const co, int (*finished_cb) (void *const), void *const arg) {
+    liteco_finished_t *finished = malloc(sizeof(liteco_finished_t));
+    liteco_stack_init(finished);
+    finished->finished_cb = finished_cb;
+    finished->arg = arg;
+
+    liteco_stack_push(&co->finished, finished);
 }
 
 static void liteco_run(void *const co_) {
@@ -65,9 +73,15 @@ liteco_status_t liteco_resume(liteco_co_t *const co) {
     liteco_curr = rem_co;
 
     if (co->status == liteco_status_terminate) {
-        if (co->finished_cb) {
-            co->finished_cb(co);
+        while (!liteco_stack_empty(&co->finished)) {
+            liteco_finished_t *const finished = liteco_stack_top(&co->finished);
+            liteco_stack_pop(&co->finished);
+
+            finished->finished_cb(finished->arg);
+
+            free(finished);
         }
+
         return liteco_status_terminate;
     }
 

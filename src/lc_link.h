@@ -50,4 +50,16 @@ struct liteco_linknode_s {
 #define liteco_link_foreach(e, l) \
     for ((e) = liteco_link_next((l)); (e) != (l); (e) = liteco_link_next((e)))
 
+#define LITECO_STACK_BASE LITECO_LINKNODE_BASE
+
+#define liteco_stack_init(s) liteco_link_init(s)
+
+#define liteco_stack_push(s, p) liteco_link_insert_after(s, p)
+
+#define liteco_stack_pop(s) liteco_link_remove(liteco_link_next(s))
+
+#define liteco_stack_top(s) liteco_link_next(s)
+
+#define liteco_stack_empty(s) liteco_link_empty(s)
+
 #endif
