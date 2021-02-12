@@ -28,6 +28,7 @@ typedef struct liteco_udp_pkt_s liteco_udp_pkt_t;
 struct liteco_udp_pkt_s {
     void (*recovery) (liteco_udp_pkt_t *const);
 
+    liteco_sockaddr_t local_addr;
     liteco_sockaddr_t remote_addr;
 
     uint32_t cap;
@@ -39,8 +40,9 @@ typedef struct liteco_udp_s liteco_udp_t;
 struct liteco_udp_s {
     LITECO_EMODULE_FIELD
 
-    liteco_chan_t *rchan;
+    liteco_sockaddr_t local_addr;
 
+    liteco_chan_t *rchan;
     int (*alloc_cb) (liteco_udp_pkt_t **const, liteco_udp_t *const);
 };
 

@@ -9,6 +9,7 @@
 #include "lc_udp.h"
 #include "lc_runtime.h"
 #include <fcntl.h>
+#include <string.h>
 
 static void liteco_udp_cb(liteco_emodule_t *const emodule);
 
@@ -33,6 +34,8 @@ int liteco_udp_bind(liteco_udp_t *const udp, const struct sockaddr *const sockad
     if (bind(udp->fd, sockaddr, socklen) != 0) {
         return liteco_udp_err_internal_error;
     }
+    memcpy(&udp->local_addr, sockaddr, socklen);
+
     return liteco_udp_err_success;
 }
 
@@ -65,6 +68,7 @@ static void liteco_udp_cb(liteco_emodule_t *const emodule) {
         if (udp->alloc_cb(&pkt, udp) != liteco_udp_err_success) {
             return;
         }
+        pkt->local_addr = udp->local_addr;
         socklen_t socklen = 0;
         int ret = recvfrom(udp->fd, pkt->data, pkt->cap, 0, &pkt->remote_addr.addr, &socklen);
         if (ret <= 0) {
