@@ -69,7 +69,7 @@ static void liteco_udp_cb(liteco_emodule_t *const emodule) {
             return;
         }
         pkt->local_addr = udp->local_addr;
-        socklen_t socklen = 0;
+        socklen_t socklen = sizeof(struct sockaddr);
         int ret = recvfrom(udp->fd, pkt->data, pkt->cap, 0, &pkt->remote_addr.addr, &socklen);
         if (ret <= 0) {
             pkt->recovery(pkt);
