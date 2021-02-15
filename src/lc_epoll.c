@@ -7,8 +7,10 @@
  */
 
 #include "lc_epoll.h"
+#include <unistd.h>
 
 int liteco_epoll_init(liteco_epoll_t *const epoll) {
+    epoll->closed = false;
     epoll->fd = epoll_create(LITECO_EPOLL_MAX_EVENT_COUNT);
 
     return liteco_epoll_err_success;
@@ -24,9 +26,16 @@ int liteco_epoll_add(liteco_epoll_t *const epoll, liteco_emodule_t *const emodul
 int liteco_epoll_run(liteco_epoll_t *const epoll, const int timeout) {
     struct epoll_event events[LITECO_EPOLL_MAX_EVENT_COUNT];
 
+    if (epoll->closed) {
+        return 0;
+    }
+
     int events_count = epoll_wait(epoll->fd, events, LITECO_EPOLL_MAX_EVENT_COUNT, timeout);
     if (events_count == -1) {
         return events_count;
+    }
+    if (epoll->closed) {
+        return 0;
     }
 
     int i;
@@ -36,4 +45,14 @@ int liteco_epoll_run(liteco_epoll_t *const epoll, const int timeout) {
     }
 
     return events_count;
+}
+
+int liteco_epoll_close(liteco_epoll_t *const epoll) {
+    if (epoll->closed) {
+        return liteco_epoll_err_closed;
+    }
+    epoll->closed = true;
+    close(epoll->fd);
+
+    return liteco_epoll_err_success;
 }

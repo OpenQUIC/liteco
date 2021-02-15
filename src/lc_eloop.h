@@ -11,12 +11,14 @@
 
 #include "lc_link.h"
 #include "lc_emodule.h"
+#include <stdbool.h>
 
 #include "lc_epoll.h"
 
 #define liteco_idle_err_success 0
 
 #define liteco_eloop_err_success 0
+#define liteco_eloop_err_closed -1
 
 typedef struct liteco_eloop_s liteco_eloop_t;
 typedef struct liteco_idle_s liteco_idle_t;
@@ -31,13 +33,13 @@ int liteco_idle_init(liteco_eloop_t *const eloop, liteco_idle_t *const idle);
 int liteco_idle_start(liteco_idle_t *const idle, void (*cb) (liteco_idle_t *const));
 
 struct liteco_eloop_s {
-
+    bool closed;
     liteco_epoll_t events;
-
     liteco_idle_t idle;
 };
 
 int liteco_eloop_init(liteco_eloop_t *const eloop);
 int liteco_eloop_run(liteco_eloop_t *const eloop, const int timeout);
+int liteco_eloop_close(liteco_eloop_t *const eloop);
 
 #endif
