@@ -19,7 +19,7 @@ int liteco_event_init(liteco_eloop_t *const eloop, liteco_event_t *const event, 
         flags |= EFD_SEMAPHORE;
     }
     event->fd = eventfd(0, flags);
-    event->cb = NULL;
+    event->cb = liteco_event_accept;
 
     return liteco_eloop_add(eloop, (liteco_emodule_t *) event);
 }
