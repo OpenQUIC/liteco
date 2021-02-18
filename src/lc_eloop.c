@@ -64,3 +64,7 @@ int liteco_eloop_close(liteco_eloop_t *const eloop) {
 
     return liteco_eloop_err_success;
 }
+
+int liteco_eloop_add(liteco_eloop_t *const eloop, liteco_emodule_t *const emodule) {
+    return liteco_epoll_add(&eloop->events, emodule, EPOLLIN | EPOLLET);
+}

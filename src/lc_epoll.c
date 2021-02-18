@@ -41,7 +41,9 @@ int liteco_epoll_run(liteco_epoll_t *const epoll, const int timeout) {
     int i;
     for (i = 0; i < events_count; i++) {
         liteco_emodule_t *m = events[i].data.ptr;
-        m->cb(m);
+        if (m->cb) {
+            m->cb(m);
+        }
     }
 
     return events_count;

@@ -16,10 +16,7 @@ int liteco_timer_init(liteco_eloop_t *const eloop, liteco_timer_t *const timer, 
     timer->cb = liteco_timer_cb;
     timer->chan = chan;
 
-    liteco_epoll_add(&eloop->events, (liteco_emodule_t *) timer, EPOLLIN | EPOLLET);
-
-
-    return liteco_timer_err_success;
+    return liteco_eloop_add(eloop, (liteco_emodule_t *) timer);
 }
 
 int liteco_timer_expire(liteco_timer_t *const timer, const uint64_t timeout, const uint64_t interval) {

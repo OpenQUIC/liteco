@@ -24,9 +24,7 @@ int liteco_runtime_init(liteco_eloop_t *const eloop, liteco_runtime_t *const rt)
     rt->fd = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK | EFD_SEMAPHORE);
     rt->cb = liteco_runtime_cb;
 
-    liteco_epoll_add(&eloop->events, (liteco_emodule_t *) rt, EPOLLET | EPOLLIN);
-
-    return liteco_runtime_err_success;
+    return liteco_eloop_add(eloop, (liteco_emodule_t *) rt);
 }
 
 int liteco_runtime_join(liteco_runtime_t *const rt, liteco_co_t *const co, const bool single) {

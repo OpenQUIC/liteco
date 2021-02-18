@@ -25,9 +25,7 @@ int liteco_udp_init(liteco_eloop_t *const eloop, liteco_udp_t *const udp, int sa
     udp->cb = liteco_udp_cb;
     udp->alloc_cb = NULL;
 
-    liteco_epoll_add(&eloop->events, (liteco_emodule_t *) udp, EPOLLET | EPOLLIN);
-
-    return liteco_udp_err_success;
+    return liteco_eloop_add(eloop, (liteco_emodule_t *) udp);
 }
 
 int liteco_udp_bind(liteco_udp_t *const udp, const struct sockaddr *const sockaddr, const socklen_t socklen) {

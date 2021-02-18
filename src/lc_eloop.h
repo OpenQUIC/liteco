@@ -42,4 +42,6 @@ int liteco_eloop_init(liteco_eloop_t *const eloop);
 int liteco_eloop_run(liteco_eloop_t *const eloop, const int timeout);
 int liteco_eloop_close(liteco_eloop_t *const eloop);
 
+int liteco_eloop_add(liteco_eloop_t *const eloop, liteco_emodule_t *const emodule);
+
 #endif
