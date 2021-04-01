@@ -87,10 +87,10 @@ liteco_rbt_t *liteco_rbt_iterator_next(liteco_rbt_iterator_t *const itr);
 #define _CAT_II(p, res) res
 #define UNIQUE_NAME(base) _CAT(base, __LINE__)
 
-#define liteco_rbt_foreach(node, root) \
-    liteco_rbt_iterator_t UNIQUE_NAME(itr) = liteco_rbt_iterator_init(root); \
+#define liteco_rbt_foreach(node, root)                                        \
+    liteco_rbt_iterator_t UNIQUE_NAME(itr) = liteco_rbt_iterator_init(root);  \
     for ((node) = (typeof(node)) liteco_rbt_iterator_next(&UNIQUE_NAME(itr)); \
-         !liteco_rbt_iterator_end(&UNIQUE_NAME(itr)); \
+         !liteco_rbt_iterator_end(&UNIQUE_NAME(itr));                         \
          (node) = (typeof(node)) liteco_rbt_iterator_next(&UNIQUE_NAME(itr)))
 
 #define LITECO_RBT_KEY_UINT64_FIELDS \
