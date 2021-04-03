@@ -11,8 +11,8 @@
 
 #include "lc_link.h"
 #include "lc_coroutine.h"
-#include "lc_emodule.h"
 #include "lc_eloop.h"
+#include "liteco.h"
 #include <pthread.h>
 
 #define liteco_runtime_err_internal_error -1001

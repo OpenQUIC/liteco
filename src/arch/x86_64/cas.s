@@ -1,10 +1,8 @@
-.weak liteco_cas;
-liteco_cas = __cas;
-
-.global __cas;
-.align 2;
-.type __cas, @function;
-__cas:
+	.section	__TEXT,__text,regular,pure_instructions
+	.globl _liteco_cas
+	.p2align 4, 0x90
+_liteco_cas:
+	.cfi_startproc
     /* @param rdi: ptr */
     /* @param rsi: old */
     /* @param rdx: nex */
@@ -27,5 +25,6 @@ seteq:
     movq $1, %rax
     ret
 
-.end __cas;
-.size __cas,.-__cas;
+	.cfi_endproc
+
+.subsections_via_symbols

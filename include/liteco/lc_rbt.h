@@ -121,10 +121,14 @@ liteco_rbt_cmp_result_t liteco_rbt_int_cmp_cb(const void *const key, const litec
 #define liteco_rbt_int_find(root, finded_key) \
     liteco_rbt_find_impl((liteco_rbt_t *) root, finded_key, liteco_rbt_int_cmp_cb)
 
-
 #define liteco_rbt_insert(root, node) _Generic((*root)->key, \
     uint64_t: liteco_rbt_uint64_insert(root, node),          \
     int:      liteco_rbt_int_insert(root, node)              \
+)
+
+#define liteco_rbt_find(root, key) _Generic(*key, \
+    uint64_t: liteco_rbt_uint64_find(root, key),  \
+    int: liteco_rbt_int_find(root, key)           \
 )
 
 #endif

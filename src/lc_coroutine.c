@@ -6,9 +6,15 @@
  *
  */
 
+#include "liteco/lc_link.h"
 #include "lc_coroutine.h"
 #include <sys/time.h>
+#if defined(__linux__)
 #include <malloc.h>
+#elif defined(__APPLE__)
+#include <stdlib.h>
+#include <sys/malloc.h>
+#endif
 #include <sched.h>
 
 __thread liteco_co_t *liteco_curr = NULL;

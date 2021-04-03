@@ -6,7 +6,7 @@
  *
  */
 
-#include "lc_rbt.h"
+#include "liteco/lc_rbt.h"
 
 const liteco_rbt_t rbt_nil = {
     .rb_p        = liteco_rbt_nil,

@@ -38,7 +38,6 @@ typedef uint8_t liteco_context_t[256];
 
 void liteco_context_init(liteco_context_t *const context, uint8_t *const st, size_t st_size, void (*fn) (void *const), void *const args);
 void liteco_context_swap(liteco_context_t const from, liteco_context_t const to);
-bool liteco_cas(uint32_t *const ptr, const uint32_t old, const uint32_t next);
 void liteco_cas_yield(uint32_t n);
 
 #endif

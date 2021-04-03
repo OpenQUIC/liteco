@@ -10,7 +10,7 @@
 #define __LITECO_CHANNEL_H__
 
 #include "lc_array.h"
-#include "lc_link.h"
+#include "liteco/lc_link.h"
 #include "lc_coroutine.h"
 #include <pthread.h>
 
@@ -76,11 +76,11 @@ int liteco_chan_destory(liteco_chan_t *const chan);
 int liteco_chan_unenforceable_push(liteco_chan_t *const chan, void *const ele);
 void *liteco_chan_unenforceable_pop(liteco_chan_t *const chan);
 
-typedef enum liteco_casetype_e liteco_casetype_t;
 enum liteco_casetype_e {
     liteco_casetype_push = 0,
     liteco_casetype_pop
 };
+typedef enum liteco_casetype_e liteco_casetype_t;
 
 typedef struct liteco_case_s liteco_case_t;
 struct liteco_case_s {

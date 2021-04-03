@@ -8,17 +8,23 @@
 
 #include "lc_epoll.h"
 #include "lc_event.h"
+#if defined(__linux__)
 #include <sys/eventfd.h>
+#endif
 #include <unistd.h>
 
 static void liteco_event_accept(liteco_emodule_t *const emodule);
 
 int liteco_event_init(liteco_eloop_t *const eloop, liteco_event_t *const event, bool semaphore) {
+#if defined(__linux__)
     int flags = EFD_CLOEXEC | EFD_NONBLOCK;
     if (semaphore) {
         flags |= EFD_SEMAPHORE;
     }
     event->fd = eventfd(0, flags);
+#elif defined(__APPLE__)
+
+#endif
     event->cb = liteco_event_accept;
 
     return liteco_eloop_add(eloop, (liteco_emodule_t *) event);

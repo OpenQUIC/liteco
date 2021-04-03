@@ -11,7 +11,6 @@
 
 #include "lc_emodule.h"
 #include "lc_eloop.h"
-#include <pthread.h>
 #include <stdbool.h>
 
 #define liteco_event_err_success 0

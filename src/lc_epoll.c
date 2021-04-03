@@ -6,6 +6,8 @@
  *
  */
 
+#if defined(__linux__)
+
 #include "lc_epoll.h"
 #include <unistd.h>
 
@@ -58,3 +60,5 @@ int liteco_epoll_close(liteco_epoll_t *const epoll) {
 
     return liteco_epoll_err_success;
 }
+
+#endif

@@ -9,19 +9,11 @@
 #ifndef __LITECO_COROUTINE_H__
 #define __LITECO_COROUTINE_H__
 
-#include "lc_context.h"
-#include "lc_link.h"
+#include "liteco/lc_link.h"
 #include <pthread.h>
+#include <sys/ucontext.h>
+#include <stdint.h>
 
-typedef enum liteco_status_e liteco_status_t;
-enum liteco_status_e {
-    liteco_status_unknow = 0,
-    liteco_status_starting,
-    liteco_status_readying,
-    liteco_status_running,
-    liteco_status_waiting,
-    liteco_status_terminate
-};
 
 typedef struct liteco_co_s liteco_co_t;
 
@@ -35,9 +27,9 @@ struct liteco_finished_s {
 
 typedef struct liteco_co_s liteco_co_t;
 struct liteco_co_s {
-    liteco_context_t *p_ctx;
+    ucontext_t *p_ctx;
 
-    liteco_context_t ctx;
+    ucontext_t ctx;
     uint8_t *st;
     size_t st_size;
 

@@ -6,6 +6,9 @@
  *
  */
 
+
+#if defined(__linux__)
+
 #ifndef __LITECO_EPOLL_H__
 #define __LITECO_EPOLL_H__
 
@@ -13,6 +16,7 @@
 #include "lc_emodule.h"
 #include <stdbool.h>
 #include <sys/epoll.h>
+#include <stdint.h>
 
 #define LITECO_EPOLL_MAX_EVENT_COUNT 32
 
@@ -30,5 +34,7 @@ int liteco_epoll_init(liteco_epoll_t *const epoll);
 int liteco_epoll_add(liteco_epoll_t *const epoll, liteco_emodule_t *const emodule, const uint32_t epevents);
 int liteco_epoll_run(liteco_epoll_t *const epoll, const int timeout);
 int liteco_epoll_close(liteco_epoll_t *const epoll);
+
+#endif
 
 #endif
