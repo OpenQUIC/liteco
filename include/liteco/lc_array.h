@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <sys/malloc.h>
 #endif
+#include "liteco.h"
 
 typedef struct liteco_array_s liteco_array_t;
 struct liteco_array_s {
@@ -29,7 +30,7 @@ struct liteco_array_s {
 #define liteco_array_get(arr, i) \
     ((arr)->payload + ((arr)->ele_size * (i)))
 
-__header_always_inline liteco_array_t *liteco_array_create(uint32_t ele_count, uint32_t ele_size) {
+__always_inline liteco_array_t *liteco_array_create(uint32_t ele_count, uint32_t ele_size) {
     liteco_array_t *arr = malloc(sizeof(liteco_array_t) + ele_count * ele_size);
     if (!arr) {
         return NULL;

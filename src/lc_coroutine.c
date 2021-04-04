@@ -6,8 +6,9 @@
  *
  */
 
+#include "liteco.h"
 #include "liteco/lc_link.h"
-#include "lc_coroutine.h"
+#include "platform/internal.h"
 #include <sys/time.h>
 #if defined(__linux__)
 #include <malloc.h>
@@ -17,87 +18,87 @@
 #endif
 #include <sched.h>
 
-__thread liteco_co_t *liteco_curr = NULL;
+__thread liteco_co_t *this_co = NULL;
 
 static void liteco_run(void *const);
 static inline uint64_t liteco_now();
 
-int liteco_create(liteco_co_t *const co, int (*fn) (void *const), void *const arg, uint8_t *const st, const size_t st_size) {
+int liteco_init(liteco_co_t *const co, int (*cb) (void *const), void *const arg, void *const st, const size_t st_size) {
     co->p_ctx = NULL;
-    co->fn = fn;
+    co->cb = cb;
     co->arg = arg;
-    co->status = liteco_status_starting;
+    co->status = LITECO_STATUS_STARTING;
     co->st = st;
     co->st_size = st_size;
 
     liteco_context_init(&co->ctx, st, st_size, liteco_run, co);
     co->ret = 0;
 
-    liteco_stack_init(&co->finished);
+    liteco_stack_init(&co->fin_st);
 
     return 0;
 }
 
 void liteco_finished(liteco_co_t *const co, int (*finished_cb) (void *const), void *const arg) {
-    liteco_finished_t *finished = malloc(sizeof(liteco_finished_t));
+    liteco_fin_t *finished = malloc(sizeof(liteco_fin_t));
     liteco_stack_init(finished);
     finished->finished_cb = finished_cb;
     finished->arg = arg;
 
-    liteco_stack_push(&co->finished, finished);
+    liteco_stack_push(&co->fin_st, finished);
 }
 
 static void liteco_run(void *const co_) {
     liteco_co_t *const co = co_;
-    co->ret = co->fn(co->arg);
-    liteco_set_status(co, liteco_status_running, liteco_status_terminate);
+    co->ret = co->cb(co->arg);
+    liteco_set_status(co, LITECO_STATUS_RUNNING, LITECO_STATUS_TERMINATE);
     liteco_yield();
 }
 
 liteco_status_t liteco_resume(liteco_co_t *const co) {
     static __thread liteco_context_t default_ctx;
     switch (co->status) {
-    case liteco_status_terminate:
-        return liteco_status_terminate;
+    case LITECO_STATUS_TERMINATE:
+        return LITECO_STATUS_TERMINATE;
 
-    case liteco_status_starting:
-        co->status = liteco_status_readying;
+    case LITECO_STATUS_STARTING:
+        co->status = LITECO_STATUS_READY;
         break;
 
     default:
         break;
     }
 
-    liteco_co_t *rem_co = liteco_curr;
+    liteco_co_t *rem_co = this_co;
 
     co->p_ctx = rem_co ? &rem_co->ctx : &default_ctx;
 
-    liteco_curr = co;
-    liteco_set_status(liteco_curr, liteco_status_readying, liteco_status_running);
+    this_co = co;
+    liteco_set_status(this_co, LITECO_STATUS_READY, LITECO_STATUS_RUNNING);
     liteco_context_swap(*co->p_ctx, co->ctx);
 
-    liteco_curr = rem_co;
+    this_co = rem_co;
 
-    if (co->status == liteco_status_terminate) {
-        while (!liteco_stack_empty(&co->finished)) {
-            liteco_finished_t *const finished = liteco_stack_top(&co->finished);
-            liteco_stack_pop(&co->finished);
+    if (co->status == LITECO_STATUS_TERMINATE) {
+        while (!liteco_stack_empty(&co->fin_st)) {
+            liteco_fin_t *const fin_cb = liteco_stack_top(&co->fin_st);
+            liteco_stack_pop(&co->fin_st);
 
-            finished->finished_cb(finished->arg);
+            fin_cb->finished_cb(fin_cb->arg);
 
-            free(finished);
+            free(fin_cb);
         }
 
-        return liteco_status_terminate;
+        return LITECO_STATUS_TERMINATE;
     }
 
     return co->status;
 }
 
 void liteco_yield() {
-    liteco_co_t *const co = liteco_curr;
-    if (co->status == liteco_status_running) {
-        co->status = liteco_status_readying;
+    liteco_co_t *const co = this_co;
+    if (co->status == LITECO_STATUS_RUNNING) {
+        co->status = LITECO_STATUS_READY;
     }
 
     liteco_context_swap(co->ctx, *co->p_ctx);
@@ -108,7 +109,7 @@ void liteco_set_status(liteco_co_t *const co, const liteco_status_t from, const 
     int x;
     uint64_t next;
 
-    if (from == liteco_status_waiting && co->status == liteco_status_running) {
+    if (from == LITECO_STATUS_WAITING  && co->status == LITECO_STATUS_RUNNING) {
         return;
     }
 

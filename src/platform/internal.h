@@ -38,4 +38,18 @@ int liteco_eloop_async_send(liteco_eloop_t *const eloop);
 
 #define container_of(ptr, type, member) ((type *) ((char *) (ptr) - offsetof(type, member)))
 
+void liteco_context_init(liteco_context_t *const context, uint8_t *const st, size_t st_size, void (*fn) (void *const), void *const args);
+void liteco_context_swap(liteco_context_t const from, liteco_context_t const to);
+void liteco_cas_yield(uint32_t n);
+
+void liteco_set_status(liteco_co_t *const co, const liteco_status_t from, const liteco_status_t to);
+
+static inline void liteco_co_lock(liteco_co_t *const co) {
+    pthread_mutex_lock(&co->mtx);
+}
+
+static inline void liteco_co_unlock(liteco_co_t *const co) {
+    pthread_mutex_unlock(&co->mtx);
+}
+
 #endif

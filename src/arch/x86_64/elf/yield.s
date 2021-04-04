@@ -7,10 +7,10 @@
  */
 
 .text
-.globl liteco_context_yield
-.type liteco_context_yield,@function
+.globl liteco_cas_yield
+.type liteco_cas_yield,@function
 .align 2
-liteco_context_yield:
+liteco_cas_yield:
     /* @param rdi: n */
     /* void liteco_cas_yield(n) */
     
@@ -22,4 +22,4 @@ liteco_context_yield:
     JNZ cas_yield_loop
 
     ret
-.size liteco_context_yield,.-liteco_context_yield
+.size liteco_cas_yield,.-liteco_cas_yield

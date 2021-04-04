@@ -7,9 +7,9 @@
  */
 
 	.section	__TEXT,__text,regular,pure_instructions
-	.globl _liteco_cas
+	.globl _liteco_cas_yield
 	.p2align 4, 0x90
-_liteco_cas:
+_liteco_cas_yield:
 	.cfi_startproc
     /* @param rdi: n */
     /* void liteco_cas_yield(n) */

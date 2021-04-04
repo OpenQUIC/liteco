@@ -79,9 +79,42 @@ enum liteco_status_e {
 };
 typedef enum liteco_status_e liteco_status_t;
 
-struct liteco_co_s {
+struct liteco_fin_s {
+    LITECO_STACK_BASE
 
-    uint8_t *st;
+    void *arg;
+    int (*finished_cb) (void *const);
+};
+
+/*
+ * x86_64:
+ *  [0010]: R8
+ *  [0020]: R9
+ *  [0030]: R10
+ *  [0040]: R11
+ *  [0050]: R12
+ *  [0060]: R13
+ *  [0070]: R14
+ *  [0100]: R15
+ *  [0110]: RDI
+ *  [0120]: RSI
+ *  [0130]: RBP
+ *  [0140]: RBX
+ *  [0150]: RDX
+ *  [0160]: RAX
+ *  [0170]: RCX
+ *  [0200]: RSP
+ *  [0210]: func_addr
+ *
+ */
+typedef uint8_t liteco_context_t[256];
+
+struct liteco_co_s {
+    liteco_context_t *p_ctx;
+
+    liteco_context_t ctx;
+
+    void *st;
     size_t st_size;
     liteco_status_t status;
 
@@ -89,13 +122,20 @@ struct liteco_co_s {
 
     int (*cb) (void *const);
     void *arg;
+
+    liteco_fin_t fin_st;
+
+    int ret;
 };
 
-struct liteco_fin_s {
-    LITECO_STACK_BASE
+extern __thread liteco_co_t *this_co;
 
-    void *arg;
+int liteco_init(liteco_co_t *const co, int (*cb) (void *const), void *const arg, void *const st, const size_t st_size);
 
-};
+liteco_status_t liteco_resume(liteco_co_t *const co);
+
+void liteco_yield();
+
+void liteco_finished(liteco_co_t *const co, int (*fin_cb) (void *const), void *const arg);
 
 #endif
