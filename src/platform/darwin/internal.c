@@ -12,19 +12,6 @@
 #include <errno.h>
 #include <unistd.h>
 
-int liteco_platform_cloexec(int fd, bool set) {
-    int r;
-    do {
-        r = ioctl(fd, set ? FIOCLEX : FIONCLEX);
-    } while (r == -1 && errno == EINTR);
-
-    if (r) {
-        return errno;
-    }
-
-    return 0;
-}
-
 int liteco_platform_pipe(int fds[2], const int flags) {
     (void) flags;
 
@@ -46,6 +33,19 @@ failed:
     close(fds[1]);
 
     return err;
+}
+
+int liteco_platform_cloexec(int fd, bool set) {
+    int r;
+    do {
+        r = ioctl(fd, set ? FIOCLEX : FIONCLEX);
+    } while (r == -1 && errno == EINTR);
+
+    if (r) {
+        return errno;
+    }
+
+    return 0;
 }
 
 int liteco_platform_nonblock(int fd, bool set) {

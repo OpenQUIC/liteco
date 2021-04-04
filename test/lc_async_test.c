@@ -2,9 +2,9 @@
 #include <stdio.h>
 
 void fuck(liteco_async_t *const handle) {
-    printf("FUCKYOU\n");
+    (void) handle;
 
-    liteco_async_send(handle);
+    printf("FUCKYOU\n");
 }
 
 int main() {

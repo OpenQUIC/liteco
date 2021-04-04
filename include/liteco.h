@@ -10,9 +10,9 @@
 #define __LITECO_H__
 
 #if defined(__linux__)
+#include "liteco/linux.h"
 #elif defined(__APPLE__)
 #include "liteco/darwin.h"
-#include <sys/ucontext.h>
 #endif
 #include "liteco/lc_link.h"
 #include <pthread.h>
@@ -80,8 +80,6 @@ enum liteco_status_e {
 typedef enum liteco_status_e liteco_status_t;
 
 struct liteco_co_s {
-    ucontext_t *p_ctx;
-    ucontext_t ctx;
 
     uint8_t *st;
     size_t st_size;

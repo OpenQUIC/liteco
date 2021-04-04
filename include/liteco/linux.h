@@ -6,23 +6,15 @@
  *
  */
 
-#ifndef __LITECO_DARWIN_H__
-#define __LITECO_DARWIN_H__
+#ifndef __LITECO_LINUX_H__
+#define __LITECO_LINUX_H__
 
 #include <stdint.h>
-#include <stdbool.h>
-#include <sys/ucontext.h>
 #include "liteco/lc_rbt.h"
 #include "liteco/lc_link.h"
 
 struct liteco_eloop_s;
 struct liteco_io_s;
-
-enum liteco_io_event_e {
-    LITECO_IOEVENT_IN = 0x01,
-    LITECO_IOEVENT_OUT = 0x02
-};
-typedef enum liteco_io_event_e liteco_io_event_t;
 
 typedef void (*liteco_io_cb) (struct liteco_eloop_s *const eloop, struct liteco_io_s *const handler, const uint32_t flags);
 
@@ -32,7 +24,6 @@ struct liteco_io_s {
 
     liteco_io_cb cb;
     uint32_t listening_events;
-    uint32_t active_events;
 };
 
 int liteco_io_init(liteco_io_t *const io, liteco_io_cb cb, int fd);
@@ -41,13 +32,13 @@ int liteco_io_start(struct liteco_eloop_s *const eloop, liteco_io_t *const io, c
 
 int liteco_io_stop(struct liteco_eloop_s *const eloop, liteco_io_t *const io, const uint32_t events);
 
-#define LITECO_ELOOP_FIELDS         \
-    bool closed;                    \
-    liteco_int_rbt_t *mon;          \
-    liteco_int_rbt_t *reg;          \
-    int kqueue_fd;                  \
-    liteco_io_t async_r;            \
-    int async_wfd;                  \
-    liteco_linknode_t async;        \
+#define LITECO_ELOOP_FIELDS  \
+    bool closed;             \
+    liteco_int_rbt_t *mon;   \
+    liteco_int_rbt_t *reg;   \
+    int epoll_fd;            \
+    liteco_io_t async_io;    \
+    int async_cnt;           \
+    liteco_linknode_t async; \
 
 #endif

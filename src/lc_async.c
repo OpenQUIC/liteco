@@ -9,7 +9,6 @@
 #include "liteco.h"
 #include "liteco/lc_link.h"
 #include "platform/internal.h"
-#include <stdio.h>
 
 int liteco_async_init(liteco_eloop_t *const eloop, liteco_async_t *const handler, liteco_async_cb cb) {
     liteco_eloop_init_async(eloop);

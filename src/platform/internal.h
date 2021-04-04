@@ -22,7 +22,11 @@ int liteco_platform_close(int fd);
 
 extern bool liteco_cas(uint32_t *const ptr, const uint32_t old, const uint32_t next);
 
+#ifdef __header_always_inline
 __header_always_inline void liteco_cpurelax() {
+#else 
+__always_inline void liteco_cpurelax() {
+#endif
 #if defined(__x86_64__)
     __asm__ __volatile__ ("rep; nop");
 #endif

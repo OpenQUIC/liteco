@@ -7,57 +7,42 @@
  */
 
 #include "liteco.h"
-#include "liteco/darwin.h"
-#include "liteco/lc_link.h"
-#include "liteco/lc_rbt.h"
 #include "platform/internal.h"
-#include <assert.h>
-#include <unistd.h>
-#include <errno.h>
-#include <stdlib.h>
-#include <sched.h>
-#include <sys/event.h>
-#include <sys/time.h>
+#include <malloc.h>
+#include <sys/epoll.h>
+#include <sys/eventfd.h>
 
-#include <stdio.h>
-
-static bool liteco_async_spin(liteco_async_t *const handler);
 static void liteco_async_io_cb(liteco_eloop_t *const eloop, liteco_io_t *const io, const uint32_t flags);
+static bool liteco_async_spin(liteco_async_t *const handler);
 static void liteco_eloop_reg_io(liteco_eloop_t *const eloop, liteco_io_t *const io);
 
 int liteco_eloop_init(liteco_eloop_t *const eloop) {
     eloop->closed = false;
-    eloop->async_wfd = -1;
 
     liteco_rbt_init(eloop->mon);
     liteco_rbt_init(eloop->reg);
 
-    eloop->kqueue_fd = kqueue();
+    eloop->epoll_fd = epoll_create(1);
 
+    eloop->async_cnt = 0;
     liteco_link_init(&eloop->async);
 
     return 0;
 }
 
 int liteco_eloop_init_async(liteco_eloop_t *const eloop) {
-    int err = 0;
-    int pipefd[2];
-    
-    if (eloop->async_wfd != -1) {
+    int fd = 0;
+
+    if (eloop->async_cnt != 0) {
         return 0;
     }
 
-    if ((err = liteco_platform_pipe(pipefd, 0))) {
-        return err;
+    if ((fd = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK)) < 0) {
+        return -1;
     }
 
-    liteco_platform_nonblock(pipefd[0], true);
-    liteco_platform_nonblock(pipefd[1], true);
-
-    liteco_io_init(&eloop->async_r, liteco_async_io_cb, pipefd[0]);
-    liteco_io_start(eloop, &eloop->async_r, EVFILT_READ);
-
-    eloop->async_wfd = pipefd[1];
+    liteco_io_init(&eloop->async_io, liteco_async_io_cb, fd);
+    liteco_io_start(eloop, &eloop->async_io, EPOLLIN | EPOLLET);
 
     return 0;
 }
@@ -65,26 +50,8 @@ int liteco_eloop_init_async(liteco_eloop_t *const eloop) {
 static void liteco_async_io_cb(liteco_eloop_t *const eloop, liteco_io_t *const io, const uint32_t flags) {
     (void) flags;
 
-    uint8_t buf;
-    ssize_t len = 0;
-
-    assert(io == &eloop->async_r);
-
-    for ( ;; ) {
-        len = read(io->key, &buf, sizeof(buf));
-
-        if (len == sizeof(buf)) {
-            continue;
-        }
-
-        if (errno == EAGAIN || errno == EWOULDBLOCK) {
-            break;
-        }
-
-        if (errno == EINTR) {
-            continue;
-        }
-
+    eventfd_t val;
+    if (eventfd_read(io->key, &val)) {
         return;
     }
 
@@ -106,14 +73,9 @@ static void liteco_async_io_cb(liteco_eloop_t *const eloop, liteco_io_t *const i
 
 int liteco_eloop_async_send(liteco_eloop_t *const eloop) {
     int ret;
-    const void *buf = "";
-    ssize_t len = 1;
+    do { ret = eventfd_write(eloop->async_io.key, 1); } while (ret == -1);
 
-    do { ret = write(eloop->async_wfd, buf, len); } while (ret == -1 && errno == EINTR);
-
-    if (ret == len) { return 0; }
-
-    return -1;
+    return 0;
 }
 
 static bool liteco_async_spin(liteco_async_t *const handler) {
@@ -130,14 +92,14 @@ static bool liteco_async_spin(liteco_async_t *const handler) {
 }
 
 int liteco_eloop_run(liteco_eloop_t *const eloop) {
-    struct kevent aevt[32];
+    struct epoll_event aevt[32];
 
     while (!eloop->closed) {
-        if (eloop->async_wfd != -1) {
-            liteco_eloop_reg_io(eloop, &eloop->async_r);
+        if (eloop->async_cnt != 0) {
+            liteco_eloop_reg_io(eloop, &eloop->async_io);
         }
 
-        int evts_cnt = kevent(eloop->kqueue_fd, NULL, 0, aevt, 32, &(struct timespec) { .tv_sec = 1, .tv_nsec = 0 });
+        int evts_cnt = epoll_wait(eloop->epoll_fd, aevt, 32, -1);
 
         if (evts_cnt <= 0) {
             continue;
@@ -145,8 +107,8 @@ int liteco_eloop_run(liteco_eloop_t *const eloop) {
 
         int i;
         for (i = 0; i < evts_cnt; i++) {
-            liteco_io_t *const io = (liteco_io_t *) aevt[i].udata;
-            io->cb(eloop, io, aevt[i].filter);
+            liteco_io_t *const io = aevt[i].data.ptr;
+            io->cb(eloop, io, aevt[i].events);
         }
     }
 
@@ -166,8 +128,9 @@ static void liteco_eloop_reg_io(liteco_eloop_t *const eloop, liteco_io_t *const 
     fd_mark->key = io->key;
     liteco_rbt_insert(&eloop->reg, fd_mark);
 
-    struct kevent evt;
-    EV_SET(&evt, io->key, io->listening_events, EV_ADD | EV_ENABLE | EV_CLEAR, 0, 0, io);
+    struct epoll_event evt;
+    evt.events = io->listening_events;
+    evt.data.ptr = io;
 
-    kevent(eloop->kqueue_fd, &evt, 1, NULL, 0, NULL);
+    epoll_ctl(eloop->epoll_fd, EPOLL_CTL_ADD, io->key, &evt);
 }
