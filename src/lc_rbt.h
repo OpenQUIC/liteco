@@ -44,8 +44,8 @@ typedef enum liteco_rbt_cmp_result_e liteco_rbt_cmp_result_t;
 typedef struct liteco_rbt_s liteco_rbt_t;
 struct liteco_rbt_s { LITECO_RBT_FIELDS };
 
-extern const liteco_rbt_t rbt_nil;
-#define liteco_rbt_nil ((liteco_rbt_t *) &rbt_nil)
+extern const liteco_rbt_t liteco_rbt_nil_instance;
+#define liteco_rbt_nil ((liteco_rbt_t *) &liteco_rbt_nil_instance)
 
 #define liteco_rbt_is_nil(node) (((liteco_rbt_t *) node) == liteco_rbt_nil)
 #define liteco_rbt_is_not_nil(node) !liteco_rbt_is_nil(node)
