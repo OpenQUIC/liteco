@@ -33,7 +33,6 @@ __always_inline void liteco_cpurelax() {
 }
 
 int liteco_eloop_init_async(liteco_eloop_t *const eloop);
-
 int liteco_eloop_async_send(liteco_eloop_t *const eloop);
 
 #define container_of(ptr, type, member) ((type *) ((char *) (ptr) - offsetof(type, member)))
@@ -44,11 +43,19 @@ void liteco_cas_yield(uint32_t n);
 
 void liteco_set_status(liteco_co_t *const co, const liteco_status_t from, const liteco_status_t to);
 
+#ifdef __header_always_inline
+__header_always_inline void liteco_co_lock(liteco_co_t *const co) {
+#else
 static inline void liteco_co_lock(liteco_co_t *const co) {
+#endif
     pthread_mutex_lock(&co->mtx);
 }
 
+#ifdef __header_always_inline
+__header_always_inline void liteco_co_unlock(liteco_co_t *const co) {
+#else
 static inline void liteco_co_unlock(liteco_co_t *const co) {
+#endif
     pthread_mutex_unlock(&co->mtx);
 }
 

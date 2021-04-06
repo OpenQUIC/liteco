@@ -11,12 +11,10 @@
 
 #define LITECO_LINKNODE_BASE \
     liteco_linknode_t *prev; \
-    liteco_linknode_t *next;
+    liteco_linknode_t *next; 
 
 typedef struct liteco_linknode_s liteco_linknode_t;
-struct liteco_linknode_s {
-    LITECO_LINKNODE_BASE
-};
+struct liteco_linknode_s { LITECO_LINKNODE_BASE };
 
 #define liteco_link_init(p) \
     (p)->next = (liteco_linknode_t *) (p); \
