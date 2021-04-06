@@ -23,7 +23,7 @@ __thread liteco_co_t *this_co = NULL;
 static void liteco_run(void *const);
 static inline uint64_t liteco_now();
 
-int liteco_init(liteco_co_t *const co, int (*cb) (void *const), void *const arg, void *const st, const size_t st_size) {
+int liteco_co_init(liteco_co_t *const co, int (*cb) (void *const), void *const arg, void *const st, const size_t st_size) {
     co->p_ctx = NULL;
     co->cb = cb;
     co->arg = arg;
@@ -39,7 +39,7 @@ int liteco_init(liteco_co_t *const co, int (*cb) (void *const), void *const arg,
     return 0;
 }
 
-void liteco_finished(liteco_co_t *const co, int (*finished_cb) (void *const), void *const arg) {
+void liteco_co_finished(liteco_co_t *const co, int (*finished_cb) (void *const), void *const arg) {
     liteco_fin_t *finished = malloc(sizeof(liteco_fin_t));
     liteco_stack_init(finished);
     finished->finished_cb = finished_cb;
