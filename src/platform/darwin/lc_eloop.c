@@ -8,8 +8,10 @@
 
 #include "liteco.h"
 #include "liteco/darwin.h"
+#include "liteco/lc_heap.h"
 #include "liteco/lc_link.h"
 #include "liteco/lc_rbt.h"
+#include "platform/darwin/internal.h"
 #include "platform/internal.h"
 #include <assert.h>
 #include <unistd.h>
@@ -25,6 +27,10 @@ static bool liteco_async_spin(liteco_async_t *const handler);
 static void liteco_async_io_cb(liteco_eloop_t *const eloop, liteco_io_t *const io, const uint32_t flags);
 static void liteco_eloop_reg_io(liteco_eloop_t *const eloop, liteco_io_t *const io);
 
+static void liteco_eloop_timer_active(liteco_eloop_t *const eloop, const struct timeval now);
+static struct timespec liteco_eloop_timer_wait(liteco_eloop_t *const eloop, const struct timeval now);
+static liteco_heap_cmp_result_t liteco_timer_heap_cmp_cb(liteco_heapnode_t *const p, liteco_heapnode_t *const c);
+
 int liteco_eloop_init(liteco_eloop_t *const eloop) {
     eloop->closed = false;
     eloop->async_wfd = -1;
@@ -36,10 +42,12 @@ int liteco_eloop_init(liteco_eloop_t *const eloop) {
 
     liteco_link_init(&eloop->async);
 
+    liteco_heap_init(&eloop->timer_heap, liteco_timer_heap_cmp_cb);
+
     return 0;
 }
 
-int liteco_eloop_init_async(liteco_eloop_t *const eloop) {
+int liteco_eloop_async_init(liteco_eloop_t *const eloop) {
     int err = 0;
     int pipefd[2];
     
@@ -129,6 +137,61 @@ static bool liteco_async_spin(liteco_async_t *const handler) {
     }
 }
 
+int liteco_eloop_timer_add(liteco_eloop_t *const eloop, liteco_timer_t *const timer) {
+    if (timer->active) {
+        return 0;
+    }
+    liteco_heapnode_init(&timer->hp_handle);
+    liteco_heap_insert(&eloop->timer_heap, &timer->hp_handle);
+    timer->active = true;
+    return 0;
+}
+
+int liteco_eloop_timer_remove(liteco_eloop_t *const eloop, liteco_timer_t *const timer) {
+    if (!timer->active) {
+        return 0;
+    }
+    liteco_heap_remove(&eloop->timer_heap, &timer->hp_handle);
+    timer->active = false;
+    return 0;
+}
+
+static void liteco_eloop_timer_active(liteco_eloop_t *const eloop, const struct timeval now) {
+    while (eloop->timer_heap.root != NULL) {
+        liteco_timer_t *const timer = container_of(eloop->timer_heap.root, liteco_timer_t, hp_handle);
+
+        if (liteco_timer_active(timer, now)) {
+            liteco_eloop_timer_remove(eloop, timer);
+            timer->cb(timer);
+
+            if ((timer->interval.tv_sec != 0 || timer->interval.tv_usec != 0) && !timer->stop) {
+                liteco_timer_set_timeout_current(timer);
+                liteco_timer_add_timeout_interval(timer);
+
+                liteco_eloop_timer_add(eloop, timer);
+            }
+        }
+        else {
+            break;
+        }
+    }
+}
+
+static struct timespec liteco_eloop_timer_wait(liteco_eloop_t *const eloop, const struct timeval now) {
+    if (eloop->timer_heap.root == NULL) {
+        return (struct timespec) { .tv_sec = 0, .tv_nsec = 0 };
+    }
+
+    liteco_timer_t *const timer = container_of(eloop->timer_heap.root, liteco_timer_t, hp_handle);
+    struct timeval timeout = liteco_timer_kevent_timeout(timer);
+    if (timeout.tv_usec < now.tv_usec) {
+        timeout.tv_sec--;
+        timeout.tv_usec += 1000 * 1000;
+    }
+
+    return (struct timespec) { .tv_sec = timeout.tv_sec - now.tv_sec, .tv_nsec = (timeout.tv_usec - now.tv_usec) * 1000 };
+}
+
 int liteco_eloop_run(liteco_eloop_t *const eloop) {
     struct kevent aevt[32];
 
@@ -137,7 +200,13 @@ int liteco_eloop_run(liteco_eloop_t *const eloop) {
             liteco_eloop_reg_io(eloop, &eloop->async_r);
         }
 
-        int evts_cnt = kevent(eloop->kqueue_fd, NULL, 0, aevt, 32, &(struct timespec) { .tv_sec = 1, .tv_nsec = 0 });
+        struct timeval now;
+        gettimeofday(&now, NULL);
+
+        liteco_eloop_timer_active(eloop, now);
+
+        struct timespec waittime = liteco_eloop_timer_wait(eloop, now);
+        int evts_cnt = kevent(eloop->kqueue_fd, NULL, 0, aevt, 32, &waittime);
 
         if (evts_cnt <= 0) {
             continue;
@@ -170,4 +239,18 @@ static void liteco_eloop_reg_io(liteco_eloop_t *const eloop, liteco_io_t *const 
     EV_SET(&evt, io->key, io->listening_events, EV_ADD | EV_ENABLE | EV_CLEAR, 0, 0, io);
 
     kevent(eloop->kqueue_fd, &evt, 1, NULL, 0, NULL);
+}
+
+static liteco_heap_cmp_result_t liteco_timer_heap_cmp_cb(liteco_heapnode_t *const p, liteco_heapnode_t *const c) {
+    liteco_timer_t *const pt = container_of(p, liteco_timer_t, hp_handle);
+    liteco_timer_t *const ct = container_of(c, liteco_timer_t, hp_handle);
+
+    if (ct->timeout.tv_sec < pt->timeout.tv_sec) {
+        return LITECO_HEAP_SWAP;
+    }
+    else if (ct->timeout.tv_sec == pt->timeout.tv_sec && ct->timeout.tv_usec < pt->timeout.tv_usec) {
+        return LITECO_HEAP_SWAP;
+    }
+
+    return LITECO_HEAP_KEEP;
 }

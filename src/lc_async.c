@@ -11,7 +11,7 @@
 #include "platform/internal.h"
 
 int liteco_async_init(liteco_eloop_t *const eloop, liteco_async_t *const handler, liteco_async_cb cb) {
-    liteco_eloop_init_async(eloop);
+    liteco_eloop_async_init(eloop);
 
     liteco_handler_init(handler, eloop, liteco_handler_type_async);
     handler->cb = cb;

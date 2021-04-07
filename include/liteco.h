@@ -21,7 +21,7 @@
 typedef struct liteco_handler_s liteco_handler_t;    
 typedef struct liteco_async_s liteco_async_t;
 typedef struct liteco_runtime_s liteco_runtime_t;
-typedef struct liteco_timer_S liteco_timer_t;
+typedef struct liteco_timer_s liteco_timer_t;
 typedef struct liteco_eloop_s liteco_eloop_t;
 
 typedef void (*liteco_async_cb) (liteco_async_t *const async);
@@ -29,6 +29,7 @@ typedef void (*liteco_timer_cb) (liteco_timer_t *const timer);
 
 enum liteco_handler_type_e {
     liteco_handler_type_async = 0,
+    liteco_handler_type_timer,
     liteco_handler_type_runtime
 };
 typedef enum liteco_handler_type_e liteco_handler_type_t;
@@ -59,9 +60,17 @@ struct liteco_async_s { LITECO_HANDLER_FIELDS LITECO_ASYNC_FIELDS };
 int liteco_async_init(liteco_eloop_t *const eloop, liteco_async_t *const handler, liteco_async_cb cb);
 int liteco_async_send(liteco_async_t *const handler);
 
-#define LITECO_TIMER_FIELDS \
+#define LITECO_TIMER_FIELDS      \
+    LITECO_TIMER_PLATFORM_FIELDS \
+    liteco_timer_cb cb;          \
+    bool active;                 \
+    bool stop;                   \
 
 struct liteco_timer_s { LITECO_HANDLER_FIELDS LITECO_TIMER_FIELDS };
+
+int liteco_timer_init(liteco_eloop_t *const eloop, liteco_timer_t *const timer);
+int liteco_timer_start(liteco_timer_t *const timer, liteco_timer_cb cb, const uint64_t timeout, const uint64_t interval);
+int liteco_timer_stop(liteco_timer_t *const timer);
 
 struct liteco_eloop_s { LITECO_ELOOP_FIELDS };
 
@@ -73,6 +82,7 @@ typedef struct liteco_fin_s liteco_fin_t;
 typedef struct liteco_waiter_s liteco_waiter_t;
 typedef struct liteco_case_s liteco_case_t;
 typedef struct liteco_chan_s liteco_chan_t;
+typedef struct liteco_timer_chan_s liteco_timer_chan_t;
 
 enum liteco_status_e {
     LITECO_STATUS_UNKNOW = 0,
@@ -209,5 +219,16 @@ struct liteco_case_s {
 };
 
 liteco_case_t *liteco_select(liteco_case_t *const cases, const uint32_t count, const bool blocked);
+
+struct liteco_timer_chan_s {
+    liteco_timer_t timer;
+    liteco_chan_t chan;
+};
+
+int liteco_timer_chan_init(liteco_eloop_t *const eloop, liteco_runtime_t *const rt, liteco_timer_chan_t *const tchan);
+
+int liteco_timer_chan_start(liteco_timer_chan_t *const tchan, const uint64_t timeout, const uint64_t interval);
+
+int liteco_timer_chan_stop(liteco_timer_chan_t *const tchan);
 
 #endif

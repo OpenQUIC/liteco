@@ -30,7 +30,7 @@ int liteco_eloop_init(liteco_eloop_t *const eloop) {
     return 0;
 }
 
-int liteco_eloop_init_async(liteco_eloop_t *const eloop) {
+int liteco_eloop_async_init(liteco_eloop_t *const eloop) {
     int fd = 0;
 
     if (eloop->async_cnt != 0) {
