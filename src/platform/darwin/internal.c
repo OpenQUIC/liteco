@@ -8,6 +8,7 @@
 
 #include "platform/internal.h"
 
+#include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <errno.h>
 #include <unistd.h>
@@ -65,3 +66,11 @@ int liteco_platform_close(int fd) {
     return close(fd);
 }
 
+int liteco_udp_socket(int domain) {
+    int fd = socket(domain, SOCK_DGRAM, 0);
+
+    liteco_platform_nonblock(fd, true);
+    liteco_platform_cloexec(fd, true);
+
+    return fd;
+}

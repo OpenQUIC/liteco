@@ -13,6 +13,7 @@
 #if defined(__APPLE__)
 #include "platform/darwin/internal.h"
 #elif defined(__linux__)
+#include "platform/linux/internal.h"
 #endif
 #include <stdbool.h>
 #include <sys/cdefs.h>
@@ -35,8 +36,13 @@ __liteco_header_inline void liteco_cpurelax() {
 int liteco_eloop_async_init(liteco_eloop_t *const eloop);
 int liteco_eloop_async_send(liteco_eloop_t *const eloop);
 
+int liteco_udp_socket(int domain);
+
+int liteco_eloop_timer_init(liteco_eloop_t *const eloop);
 int liteco_eloop_timer_add(liteco_eloop_t *const eloop, liteco_timer_t *const timer);
 int liteco_eloop_timer_remove(liteco_eloop_t *const eloop, liteco_timer_t *const timer);
+
+int liteco_eloop_udp_add(liteco_eloop_t *const eloop, liteco_udp_t *const udp);
 
 #define container_of(ptr, type, member) ((type *) ((char *) (ptr) - offsetof(type, member)))
 

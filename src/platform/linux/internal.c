@@ -8,3 +8,6 @@
 
 #include "platform/internal.h"
 
+int liteco_udp_socket(int domain) {
+    return socket(domain, SOCK_DGRAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0);
+}

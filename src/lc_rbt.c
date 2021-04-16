@@ -8,7 +8,7 @@
 
 #include "liteco/lc_rbt.h"
 
-const liteco_rbt_t rbt_nil = {
+const liteco_rbt_t liteco_rbt_nil_instance = {
     .rb_p        = liteco_rbt_nil,
     .rb_r        = liteco_rbt_nil,
     .rb_l        = liteco_rbt_nil,

@@ -137,6 +137,12 @@ static bool liteco_async_spin(liteco_async_t *const handler) {
     }
 }
 
+int liteco_eloop_timer_init(liteco_eloop_t *const eloop) {
+    (void) eloop;
+
+    return 0;
+}
+
 int liteco_eloop_timer_add(liteco_eloop_t *const eloop, liteco_timer_t *const timer) {
     if (timer->active) {
         return 0;
@@ -192,12 +198,19 @@ static struct timespec liteco_eloop_timer_wait(liteco_eloop_t *const eloop, cons
     return (struct timespec) { .tv_sec = timeout.tv_sec - now.tv_sec, .tv_nsec = (timeout.tv_usec - now.tv_usec) * 1000 };
 }
 
+int liteco_eloop_udp_add(liteco_eloop_t *const eloop, liteco_udp_t *const udp) {
+    liteco_io_start(eloop, &udp->io, EVFILT_READ);
+
+    return 0;
+}
+
 int liteco_eloop_run(liteco_eloop_t *const eloop) {
     struct kevent aevt[32];
 
     while (!eloop->closed) {
-        if (eloop->async_wfd != -1) {
-            liteco_eloop_reg_io(eloop, &eloop->async_r);
+        liteco_io_t *io = NULL;
+        liteco_rbt_foreach(io, eloop->mon) {
+            liteco_eloop_reg_io(eloop, io);
         }
 
         struct timeval now;
