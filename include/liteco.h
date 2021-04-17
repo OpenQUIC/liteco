@@ -9,6 +9,7 @@
 #ifndef __LITECO_H__
 #define __LITECO_H__
 
+#include "lc_udp.h"
 #if defined(__linux__)
 #include "liteco/linux.h"
 #elif defined(__APPLE__)
@@ -17,19 +18,24 @@
 #include "liteco/lc_link.h"
 #include "liteco/lc_array.h"
 #include <pthread.h>
+#include <sys/socket.h>
 
 typedef struct liteco_handler_s liteco_handler_t;    
 typedef struct liteco_async_s liteco_async_t;
 typedef struct liteco_runtime_s liteco_runtime_t;
 typedef struct liteco_timer_s liteco_timer_t;
+typedef struct liteco_udp_s liteco_udp_t;
 typedef struct liteco_eloop_s liteco_eloop_t;
 
 typedef void (*liteco_async_cb) (liteco_async_t *const async);
 typedef void (*liteco_timer_cb) (liteco_timer_t *const timer);
+typedef void (*liteco_udp_alloc_cb) (liteco_udp_t *const udp, void **const b_ptr, size_t *const b_size);
+typedef void (*liteco_udp_recv_cb) (liteco_udp_t *const udp, int ret, const void *const buf, const size_t b_size);
 
 enum liteco_handler_type_e {
     liteco_handler_type_async = 0,
     liteco_handler_type_timer,
+    liteco_handler_type_udp,
     liteco_handler_type_runtime
 };
 typedef enum liteco_handler_type_e liteco_handler_type_t;
@@ -72,6 +78,18 @@ int liteco_timer_init(liteco_eloop_t *const eloop, liteco_timer_t *const timer);
 int liteco_timer_start(liteco_timer_t *const timer, liteco_timer_cb cb, const uint64_t timeout, const uint64_t interval);
 int liteco_timer_stop(liteco_timer_t *const timer);
 
+#define LITECO_UDP_FIELDS         \
+    liteco_io_t io;               \
+    liteco_udp_alloc_cb alloc_cb; \
+    liteco_udp_recv_cb recv_cb;   \
+
+struct liteco_udp_s { LITECO_HANDLER_FIELDS LITECO_UDP_FIELDS };
+
+int liteco_udp_init(liteco_eloop_t *const eloop, liteco_udp_t *const udp);
+int liteco_udp_bind(liteco_udp_t *const udp, const struct sockaddr *const addr);
+int liteco_udp_sendto(liteco_udp_t *const udp, struct sockaddr *const addr, void *const buf, const size_t len);
+int liteco_udp_recv(liteco_udp_t *const udp, liteco_udp_alloc_cb alloc_cb, liteco_udp_recv_cb recv_cb);
+
 struct liteco_eloop_s { LITECO_ELOOP_FIELDS };
 
 int liteco_eloop_init(liteco_eloop_t *const eloop);
@@ -83,6 +101,7 @@ typedef struct liteco_waiter_s liteco_waiter_t;
 typedef struct liteco_case_s liteco_case_t;
 typedef struct liteco_chan_s liteco_chan_t;
 typedef struct liteco_timer_chan_s liteco_timer_chan_t;
+typedef struct liteco_udp_chan_s liteco_udp_chan_t;
 
 enum liteco_status_e {
     LITECO_STATUS_UNKNOW = 0,
@@ -226,9 +245,14 @@ struct liteco_timer_chan_s {
 };
 
 int liteco_timer_chan_init(liteco_eloop_t *const eloop, liteco_runtime_t *const rt, liteco_timer_chan_t *const tchan);
-
 int liteco_timer_chan_start(liteco_timer_chan_t *const tchan, const uint64_t timeout, const uint64_t interval);
-
 int liteco_timer_chan_stop(liteco_timer_chan_t *const tchan);
+
+struct liteco_udp_chan_s {
+    liteco_udp_t udp;
+    liteco_chan_t chan;
+};
+
+int liteco_udp_chan_init(liteco_eloop_t *const eloop, liteco_runtime_t *const rt, liteco_udp_chan_t *const uchan);
 
 #endif
