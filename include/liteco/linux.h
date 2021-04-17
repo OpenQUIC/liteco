@@ -12,7 +12,6 @@
 #include <stdint.h>
 #include "liteco/lc_rbt.h"
 #include "liteco/lc_link.h"
-#include "liteco/lc_heap.h"
 
 struct liteco_eloop_s;
 struct liteco_io_s;
@@ -41,10 +40,5 @@ int liteco_io_stop(struct liteco_eloop_s *const eloop, liteco_io_t *const io, co
     liteco_io_t async_io;    \
     int async_cnt;           \
     liteco_linknode_t async; \
-
-#define LITECO_TIMER_PLATFORM_FIELDS \
-    liteco_heapnode_t hp_handle;     \
-    struct timeval timeout;          \
-    struct timeval interval;         \
 
 #endif

@@ -13,7 +13,6 @@
 #if defined(__APPLE__)
 #include "platform/darwin/internal.h"
 #elif defined(__linux__)
-#include "platform/linux/internal.h"
 #endif
 #include <stdbool.h>
 #include <sys/cdefs.h>
