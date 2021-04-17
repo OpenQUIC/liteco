@@ -8,7 +8,6 @@
 
 #include "liteco.h"
 #include "liteco/lc_heap.h"
-#include "platform/darwin/internal.h"
 #include "platform/internal.h"
 #include <sys/resource.h>
 #include <unistd.h>

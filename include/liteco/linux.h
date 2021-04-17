@@ -10,6 +10,8 @@
 #define __LITECO_LINUX_H__
 
 #include <stdint.h>
+#include <sys/time.h>
+#include <time.h>
 #include "liteco/lc_rbt.h"
 #include "liteco/lc_link.h"
 #include "liteco/lc_heap.h"
@@ -46,7 +48,7 @@ int liteco_io_stop(struct liteco_eloop_s *const eloop, liteco_io_t *const io, co
 
 #define LITECO_TIMER_PLATFORM_FIELDS \
     liteco_heapnode_t hp_handle;     \
-    struct timeval timeout;          \
-    struct timeval interval;         \
+    struct timespec timeout;         \
+    struct timespec interval;        \
 
 #endif
