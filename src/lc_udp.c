@@ -17,6 +17,9 @@
 
 static void liteco_udp_io_cb(liteco_eloop_t *const eloop, liteco_io_t *const handler, const uint32_t flags);
 
+static void liteco_udp_chan_alloc_udp_cb(liteco_udp_t *const udp, void **const b_ptr, size_t *const b_size);
+static void liteco_udp_chan_recv_udp_cb(liteco_udp_t *const udp, int ret, const struct sockaddr *const peer, const void *const buf, const size_t b_size);
+
 int liteco_udp_init(liteco_eloop_t *const eloop, liteco_udp_t *const udp) {
     liteco_handler_init(udp, eloop, liteco_handler_type_udp);
 
@@ -97,7 +100,7 @@ static void liteco_udp_io_cb(liteco_eloop_t *const eloop, liteco_io_t *const han
         struct iovec buf = { .iov_base = NULL, .iov_len = 0 };
         udp->alloc_cb(udp, &buf.iov_base, &buf.iov_len);
         if (buf.iov_base == NULL || buf.iov_len == 0) {
-            udp->recv_cb(udp, -1, NULL, 0);
+            udp->recv_cb(udp, -1, NULL, NULL, 0);
             return;
         }
 
@@ -114,18 +117,51 @@ static void liteco_udp_io_cb(liteco_eloop_t *const eloop, liteco_io_t *const han
         int ret = recvmsg(udp->io.key, &hdr, 0);
         if (ret == -1) {
             if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                udp->recv_cb(udp, 0, NULL, 0);
+                udp->recv_cb(udp, 0, NULL, NULL, 0);
                 return;
             }
             else {
-                udp->recv_cb(udp, errno, buf.iov_base, buf.iov_len);
+                udp->recv_cb(udp, errno, (struct sockaddr *) hdr.msg_name, buf.iov_base, buf.iov_len);
                 return;
             }
         }
         else {
-            udp->recv_cb(udp, ret, buf.iov_base, buf.iov_len);
+            udp->recv_cb(udp, ret, (struct sockaddr *) hdr.msg_name, buf.iov_base, buf.iov_len);
         }
     }
+}
+
+static void liteco_udp_chan_alloc_udp_cb(liteco_udp_t *const udp, void **const b_ptr, size_t *const b_size) {
+    liteco_udp_chan_t *const uchan = container_of(udp, liteco_udp_chan_t, udp);
+    liteco_udp_chan_ele_t *ele = NULL;
+
+    uchan->alloc_cb(uchan, &ele);
+    if (!ele) {
+        *b_ptr = NULL;
+        *b_size = 0;
+    }
+    else {
+        *b_ptr = ele->buf;
+        *b_size = ele->b_size;
+    }
+}
+
+static void liteco_udp_chan_recv_udp_cb(liteco_udp_t *const udp, int ret, const struct sockaddr *const peer, const void *const buf, const size_t b_size) {
+    (void) b_size;
+
+    liteco_udp_chan_t *const uchan = container_of(udp, liteco_udp_chan_t, udp);
+    liteco_udp_chan_ele_t *const ele = container_of(buf, liteco_udp_chan_ele_t, buf);
+    ele->ret = ret;
+    switch (peer->sa_family) {
+    case AF_INET:
+        ele->addr.af_inet = *(struct sockaddr_in *) peer;
+        break;
+    case AF_INET6:
+        ele->addr.af_inet6 = *(struct sockaddr_in6 *) peer;
+        break;
+    }
+
+    liteco_chan_unenforceable_push(&uchan->chan, ele);
 }
 
 int liteco_udp_chan_init(liteco_eloop_t *const eloop, liteco_runtime_t *const rt, liteco_udp_chan_t *const uchan) {
@@ -135,73 +171,20 @@ int liteco_udp_chan_init(liteco_eloop_t *const eloop, liteco_runtime_t *const rt
     return 0;
 }
 
-/*static void liteco_udp_cb(liteco_emodule_t *const emodule);*/
+int liteco_udp_chan_bind(liteco_udp_chan_t *const uchan, const struct sockaddr *const addr) {
+    return liteco_udp_bind(&uchan->udp, addr);
+}
 
-/*int liteco_udp_init(liteco_eloop_t *const eloop, liteco_udp_t *const udp, int sa_family) {*/
-    /*udp->fd = socket(sa_family, SOCK_DGRAM, 0);*/
-    /*if (udp->fd == -1) {*/
-        /*return liteco_udp_err_internal_error;*/
-    /*}*/
-    /*int flags = fcntl(udp->fd, F_GETFL);*/
-    /*fcntl(udp->fd, F_SETFL, flags | O_NONBLOCK);*/
+int liteco_udp_chan_sendto(liteco_udp_chan_t  *const uchan, struct sockaddr *const addr, void *const buf, const size_t len) {
+    return liteco_udp_sendto(&uchan->udp, addr, buf, len);
+}
 
-    /*udp->rchan = NULL;*/
-    /*udp->cb = liteco_udp_cb;*/
-    /*udp->alloc_cb = NULL;*/
+int liteco_udp_chan_recv(liteco_udp_chan_t *const uchan, liteco_udp_chan_alloc_cb alloc_cb) {
+    uchan->alloc_cb = alloc_cb;
 
-    /*return liteco_eloop_add(eloop, (liteco_emodule_t *) udp);*/
-/*}*/
+    return liteco_udp_recv(&uchan->udp, liteco_udp_chan_alloc_udp_cb, liteco_udp_chan_recv_udp_cb);
+}
 
-/*int liteco_udp_bind(liteco_udp_t *const udp, const struct sockaddr *const sockaddr, const socklen_t socklen) {*/
-    /*if (bind(udp->fd, sockaddr, socklen) != 0) {*/
-        /*return liteco_udp_err_internal_error;*/
-    /*}*/
-    /*memcpy(&udp->local_addr, sockaddr, socklen);*/
-
-    /*return liteco_udp_err_success;*/
-/*}*/
-
-/*int liteco_udp_sendto(liteco_udp_t *const udp,*/
-                      /*const struct sockaddr *const sockaddr, socklen_t socklen,*/
-                      /*const void *const data, const uint32_t datalen) {*/
-    /*if (sendto(udp->fd, data, datalen, 0, sockaddr, socklen) <= 0) {*/
-        /*return liteco_udp_err_internal_error;*/
-    /*}*/
-
-    /*return liteco_udp_err_success;*/
-/*}*/
-
-/*int liteco_udp_set_recv(liteco_udp_t *const udp, int (*alloc_cb) (liteco_udp_pkt_t **const, liteco_udp_t *const), liteco_chan_t *const rchan) {*/
-    /*udp->alloc_cb = alloc_cb;*/
-    /*udp->rchan = rchan;*/
-
-    /*return liteco_udp_err_success;*/
-/*}*/
-
-/*static void liteco_udp_cb(liteco_emodule_t *const emodule) {*/
-    /*liteco_udp_t *const udp = (liteco_udp_t *) emodule;*/
-
-    /*if (!udp->rchan || !udp->alloc_cb) {*/
-        /*return;*/
-    /*}*/
-
-    /*for ( ;; ) {*/
-        /*liteco_udp_pkt_t *pkt;*/
-        /*if (udp->alloc_cb(&pkt, udp) != liteco_udp_err_success) {*/
-            /*return;*/
-        /*}*/
-        /*pkt->local_addr = udp->local_addr;*/
-        /*socklen_t socklen = sizeof(struct sockaddr);*/
-        /*int ret = recvfrom(udp->fd, pkt->data, pkt->cap, 0, &pkt->remote_addr.addr, &socklen);*/
-        /*if (ret <= 0) {*/
-            /*pkt->recovery(pkt);*/
-            /*return;*/
-        /*}*/
-        /*pkt->len = ret;*/
-
-        /*if (liteco_chan_unenforceable_push(udp->rchan, pkt) != liteco_chan_err_success) {*/
-            /*pkt->recovery(pkt);*/
-            /*return;*/
-        /*}*/
-    /*}*/
-/*}*/
+liteco_udp_chan_ele_t *liteco_udp_chan_pop(liteco_udp_chan_t *const uchan, const bool blocked) {
+    return liteco_chan_pop(&uchan->chan, blocked);
+}

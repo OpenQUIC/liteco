@@ -13,7 +13,8 @@ void alloc(liteco_udp_t *const udp, void **const b_ptr, size_t *const b_size) {
     *b_size = 256;
 }
 
-void recv_cb(liteco_udp_t *const udp, int ret, const void *const buf, const size_t b_size) {
+void recv_cb(liteco_udp_t *const udp, int ret, const struct sockaddr *const addr, const void *const buf, const size_t b_size) {
+    (void) addr;
     (void) udp;
     (void) b_size;
     if (ret == 0) {
