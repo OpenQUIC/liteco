@@ -8,7 +8,6 @@
 
 #include "liteco.h"
 #include "liteco/lc_heap.h"
-#include "platform/darwin/internal.h"
 #include "platform/internal.h"
 #include <sys/resource.h>
 #include <unistd.h>
@@ -16,6 +15,8 @@
 static void liteco_timer_chan_cb(liteco_timer_t *const timer);
 
 int liteco_timer_init(liteco_eloop_t *const eloop, liteco_timer_t *const timer) {
+    liteco_eloop_timer_init(eloop);
+
     liteco_handler_init(timer, eloop, liteco_handler_type_timer);
     liteco_heapnode_init(&timer->hp_handle);
 

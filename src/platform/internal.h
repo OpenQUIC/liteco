@@ -38,6 +38,7 @@ int liteco_eloop_async_send(liteco_eloop_t *const eloop);
 
 int liteco_udp_socket(int domain);
 
+int liteco_eloop_timer_init(liteco_eloop_t *const eloop);
 int liteco_eloop_timer_add(liteco_eloop_t *const eloop, liteco_timer_t *const timer);
 int liteco_eloop_timer_remove(liteco_eloop_t *const eloop, liteco_timer_t *const timer);
 

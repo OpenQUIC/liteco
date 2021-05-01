@@ -137,6 +137,12 @@ static bool liteco_async_spin(liteco_async_t *const handler) {
     }
 }
 
+int liteco_eloop_timer_init(liteco_eloop_t *const eloop) {
+    (void) eloop;
+
+    return 0;
+}
+
 int liteco_eloop_timer_add(liteco_eloop_t *const eloop, liteco_timer_t *const timer) {
     if (timer->active) {
         return 0;

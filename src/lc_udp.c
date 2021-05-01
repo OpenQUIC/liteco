@@ -13,6 +13,7 @@
 #include <netinet/in.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <stddef.h>
 
 static void liteco_udp_io_cb(liteco_eloop_t *const eloop, liteco_io_t *const handler, const uint32_t flags);
 
@@ -82,7 +83,6 @@ int liteco_udp_recv(liteco_udp_t *const udp, liteco_udp_alloc_cb alloc_cb, litec
     return 0;
 }
 
-#include <stdio.h>
 static void liteco_udp_io_cb(liteco_eloop_t *const eloop, liteco_io_t *const handler, const uint32_t flags) {
     (void) eloop;
     (void) flags;

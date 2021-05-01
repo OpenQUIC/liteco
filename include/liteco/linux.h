@@ -10,6 +10,8 @@
 #define __LITECO_LINUX_H__
 
 #include <stdint.h>
+#include <sys/time.h>
+#include <time.h>
 #include "liteco/lc_rbt.h"
 #include "liteco/lc_link.h"
 #include "liteco/lc_heap.h"
@@ -33,18 +35,20 @@ int liteco_io_start(struct liteco_eloop_s *const eloop, liteco_io_t *const io, c
 
 int liteco_io_stop(struct liteco_eloop_s *const eloop, liteco_io_t *const io, const uint32_t events);
 
-#define LITECO_ELOOP_FIELDS  \
-    bool closed;             \
-    liteco_int_rbt_t *mon;   \
-    liteco_int_rbt_t *reg;   \
-    int epoll_fd;            \
-    liteco_io_t async_io;    \
-    int async_cnt;           \
-    liteco_linknode_t async; \
+#define LITECO_ELOOP_FIELDS   \
+    bool closed;              \
+    liteco_int_rbt_t *mon;    \
+    liteco_int_rbt_t *reg;    \
+    int epoll_fd;             \
+    liteco_io_t async_io;     \
+    int async_cnt;            \
+    liteco_linknode_t async;  \
+    liteco_heap_t timer_heap; \
+    liteco_io_t timer_io;     \
 
 #define LITECO_TIMER_PLATFORM_FIELDS \
     liteco_heapnode_t hp_handle;     \
-    struct timeval timeout;          \
-    struct timeval interval;         \
+    struct timespec timeout;         \
+    struct timespec interval;        \
 
 #endif

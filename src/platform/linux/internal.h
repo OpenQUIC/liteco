@@ -17,44 +17,44 @@
 
 __liteco_header_inline void liteco_timer_set_timeout(liteco_timer_t *const timer, const uint64_t timeout) {
     timer->timeout.tv_sec = timeout / (1000 * 1000);
-    timer->timeout.tv_usec = timeout % (1000 * 1000);
+    timer->timeout.tv_nsec = (timeout % (1000 * 1000)) * 1000;
 }
 
 __liteco_header_inline void liteco_timer_set_interval(liteco_timer_t *const timer, const uint64_t interval) {
     timer->interval.tv_sec = interval / (1000 * 1000);
-    timer->interval.tv_usec = interval % (1000 * 1000);
+    timer->interval.tv_nsec = (interval % (1000 * 1000)) * 1000;
 }
 
 __liteco_header_inline void liteco_timer_set_timeout_current(liteco_timer_t *const timer) {
-    gettimeofday(&timer->timeout, NULL);
+    clock_gettime(CLOCK_MONOTONIC, &timer->timeout);
 }
 
 __liteco_header_inline void liteco_timer_add_timeout(liteco_timer_t *const timer, const uint64_t timeout) {
     timer->timeout.tv_sec += timeout / (1000 * 1000);
-    timer->timeout.tv_usec += timeout % (1000 * 1000);
-    timer->timeout.tv_sec += timer->timeout.tv_usec / (1000 * 1000);
-    timer->timeout.tv_usec %= 1000 * 1000;
+    timer->timeout.tv_nsec += (timeout % (1000 * 1000)) * 1000;
+    timer->timeout.tv_sec += timer->timeout.tv_nsec / (1000 * 1000 * 1000);
+    timer->timeout.tv_nsec %= 1000 * 1000 * 1000;
 }
 
 __liteco_header_inline void liteco_timer_add_timeout_interval(liteco_timer_t *const timer) {
     timer->timeout.tv_sec += timer->interval.tv_sec;
-    timer->timeout.tv_usec += timer->interval.tv_usec;
-    timer->timeout.tv_sec += timer->timeout.tv_usec / (1000 * 1000);
-    timer->timeout.tv_usec %= 1000 * 1000;
+    timer->timeout.tv_nsec += timer->interval.tv_nsec;
+    timer->timeout.tv_sec += timer->timeout.tv_nsec / (1000 * 1000 * 1000);
+    timer->timeout.tv_nsec %= 1000 * 1000 * 1000;
 }
 
-__liteco_header_inline bool liteco_timer_active(liteco_timer_t *const timer, struct timeval curr) {
+__liteco_header_inline bool liteco_timer_active(liteco_timer_t *const timer, struct timespec curr) {
     if (timer->timeout.tv_sec < curr.tv_sec) {
         return true;
     }
-    else if (timer->timeout.tv_sec == curr.tv_sec && timer->timeout.tv_usec < curr.tv_usec) {
+    else if (timer->timeout.tv_sec == curr.tv_sec && timer->timeout.tv_nsec < curr.tv_nsec) {
         return true;
     }
 
     return false;
 }
 
-__liteco_header_inline struct timeval liteco_timer_kevent_timeout(liteco_timer_t *const timer) {
+__liteco_header_inline struct timespec liteco_timer_timerfd_timeout(liteco_timer_t *const timer) {
     return timer->timeout;
 }
 

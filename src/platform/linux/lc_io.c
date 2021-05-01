@@ -29,8 +29,6 @@ int liteco_io_start(struct liteco_eloop_s *const eloop, liteco_io_t *const io, c
 
     if (liteco_rbt_is_nil(liteco_rbt_find(eloop->mon, &io->key))) {
         liteco_rbt_insert(&eloop->mon, io);
-
-        eloop->async_cnt++;
     }
 
     return 0;
@@ -47,8 +45,6 @@ int liteco_io_stop(struct liteco_eloop_s *const eloop, liteco_io_t *const io, co
         liteco_io_t *const del = io;
         liteco_rbt_remove(&eloop->mon, &del);
         *io = *del;
-
-        eloop->async_cnt--;
     }
 
     return 0;

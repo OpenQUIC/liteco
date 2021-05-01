@@ -11,10 +11,15 @@
 #include <malloc.h>
 #include <sys/epoll.h>
 #include <sys/eventfd.h>
+#include <sys/timerfd.h>
+#include <unistd.h>
 
 static void liteco_async_io_cb(liteco_eloop_t *const eloop, liteco_io_t *const io, const uint32_t flags);
 static bool liteco_async_spin(liteco_async_t *const handler);
 static void liteco_eloop_reg_io(liteco_eloop_t *const eloop, liteco_io_t *const io);
+
+static void liteco_eloop_timer_active(liteco_eloop_t *const eloop, const struct timespec now);
+static void liteco_timer_io_cb(liteco_eloop_t *const eloop, liteco_io_t *const io, const uint32_t flags);
 
 int liteco_eloop_init(liteco_eloop_t *const eloop) {
     eloop->closed = false;
@@ -23,6 +28,7 @@ int liteco_eloop_init(liteco_eloop_t *const eloop) {
     liteco_rbt_init(eloop->reg);
 
     eloop->epoll_fd = epoll_create(1);
+    eloop->timer_io.key = -1;
 
     eloop->async_cnt = 0;
     liteco_link_init(&eloop->async);
@@ -91,12 +97,89 @@ static bool liteco_async_spin(liteco_async_t *const handler) {
     }
 }
 
+int liteco_eloop_timer_init(liteco_eloop_t *const eloop) {
+    if (eloop->timer_io.key != -1) {
+        return 0;
+    }
+
+    int fd = timerfd_create(CLOCK_MONOTONIC, EFD_CLOEXEC | EFD_NONBLOCK);
+    liteco_io_init(&eloop->timer_io, liteco_timer_io_cb, fd);
+    liteco_io_start(eloop, &eloop->timer_io, EPOLLIN | EPOLLET);
+    return 0;
+}
+
+int liteco_eloop_timer_add(liteco_eloop_t *const eloop, liteco_timer_t *const timer) {
+    if (timer->active) {
+        return 0;
+    }
+    liteco_heapnode_init(&timer->hp_handle);
+    liteco_heap_insert(&eloop->timer_heap, &timer->hp_handle);
+    timer->active = true;
+
+    struct timespec now;
+    clock_gettime(CLOCK_MONOTONIC, &now);
+    liteco_eloop_timer_active(eloop, now);
+
+    return 0;
+}
+
+int liteco_eloop_timer_remove(liteco_eloop_t *const eloop, liteco_timer_t *const timer) {
+    if (!timer->active) {
+        return 0;
+    }
+    liteco_heap_remove(&eloop->timer_heap, &timer->hp_handle);
+    timer->active = false;
+
+    struct timespec now;
+    clock_gettime(CLOCK_MONOTONIC, &now);
+    liteco_eloop_timer_active(eloop, now);
+
+    return 0;
+}
+
+static void liteco_eloop_timer_active(liteco_eloop_t *const eloop, const struct timespec now) {
+    while (eloop->timer_heap.root != NULL) {
+        liteco_timer_t *const timer = container_of(eloop->timer_heap.root, liteco_timer_t, hp_handle);
+
+        if (liteco_timer_active(timer, now)) {
+            liteco_eloop_timer_remove(eloop, timer);
+            timer->cb(timer);
+
+            if ((timer->interval.tv_sec != 0 || timer->interval.tv_nsec != 0) && !timer->stop) {
+                liteco_timer_set_timeout_current(timer);
+                liteco_timer_add_timeout_interval(timer);
+
+                liteco_eloop_timer_add(eloop, timer);
+            }
+        }
+        else {
+            timerfd_settime(eloop->timer_io.key, 1, &(struct itimerspec) {
+                                .it_interval = { .tv_sec = 0, .tv_nsec = 0 },
+                                .it_value = liteco_timer_timerfd_timeout(timer)
+                            }, NULL);
+            break;
+        }
+    }
+}
+
+static void liteco_timer_io_cb(liteco_eloop_t *const eloop, liteco_io_t *const io, const uint32_t flags) {
+    (void) flags;
+
+    uint64_t exp = 0;
+    read(io->key, &exp, sizeof(exp));
+
+    struct timespec now;
+    clock_gettime(CLOCK_MONOTONIC, &now);
+    liteco_eloop_timer_active(eloop, now);
+}
+
 int liteco_eloop_run(liteco_eloop_t *const eloop) {
     struct epoll_event aevt[32];
 
     while (!eloop->closed) {
-        if (eloop->async_cnt != 0) {
-            liteco_eloop_reg_io(eloop, &eloop->async_io);
+        liteco_io_t *io = NULL;
+        liteco_rbt_foreach(io, eloop->mon) {
+            liteco_eloop_reg_io(eloop, io);
         }
 
         int evts_cnt = epoll_wait(eloop->epoll_fd, aevt, 32, -1);
