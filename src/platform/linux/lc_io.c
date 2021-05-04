@@ -7,7 +7,7 @@
  */
 
 #include "liteco.h"
-#include "liteco/linux.h"
+#include "platform/internal.h"
 #include <assert.h>
 
 int liteco_io_init(liteco_io_t *const io, liteco_io_cb cb, int fd) {
@@ -45,6 +45,8 @@ int liteco_io_stop(struct liteco_eloop_s *const eloop, liteco_io_t *const io, co
         liteco_io_t *const del = io;
         liteco_rbt_remove(&eloop->mon, &del);
         *io = *del;
+
+        liteco_platform_close(io->key);
     }
 
     return 0;

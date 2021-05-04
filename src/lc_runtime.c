@@ -23,6 +23,8 @@ static liteco_co_t *liteco_runtime_pop(liteco_runtime_t *const rt);
 static bool liteco_runtime_exist(liteco_runtime_t *const rt, liteco_co_t *const co);
 
 int liteco_runtime_init(liteco_eloop_t *const eloop, liteco_runtime_t *const rt) {
+    liteco_handler_init(rt, eloop, liteco_handler_type_runtime);
+
     pthread_mutex_init(&rt->mtx, NULL);
     liteco_link_init(&rt->rq);
 

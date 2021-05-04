@@ -7,6 +7,7 @@
  */
 
 #include "liteco.h"
+#include "liteco/darwin.h"
 #include "platform/internal.h"
 #include <errno.h>
 #include <fcntl.h>
@@ -86,6 +87,10 @@ int liteco_udp_recv(liteco_udp_t *const udp, liteco_udp_alloc_cb alloc_cb, litec
     return 0;
 }
 
+int liteco_udp_close(liteco_udp_t *const udp) {
+    return liteco_io_stop(udp->eloop, &udp->io, udp->io.listening_events);
+}
+
 static void liteco_udp_io_cb(liteco_eloop_t *const eloop, liteco_io_t *const handler, const uint32_t flags) {
     (void) eloop;
     (void) flags;
@@ -100,7 +105,7 @@ static void liteco_udp_io_cb(liteco_eloop_t *const eloop, liteco_io_t *const han
         struct iovec buf = { .iov_base = NULL, .iov_len = 0 };
         udp->alloc_cb(udp, &buf.iov_base, &buf.iov_len);
         if (buf.iov_base == NULL || buf.iov_len == 0) {
-            udp->recv_cb(udp, -1, NULL, NULL, 0);
+            udp->recv_cb(udp, -1, NULL, buf.iov_base, buf.iov_len);
             return;
         }
 
@@ -117,7 +122,7 @@ static void liteco_udp_io_cb(liteco_eloop_t *const eloop, liteco_io_t *const han
         int ret = recvmsg(udp->io.key, &hdr, 0);
         if (ret == -1) {
             if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                udp->recv_cb(udp, 0, NULL, NULL, 0);
+                udp->recv_cb(udp, 0, NULL, buf.iov_base, buf.iov_len);
                 return;
             }
             else {
@@ -151,6 +156,11 @@ static void liteco_udp_chan_recv_udp_cb(liteco_udp_t *const udp, int ret, const 
 
     liteco_udp_chan_t *const uchan = container_of(udp, liteco_udp_chan_t, udp);
     liteco_udp_chan_ele_t *const ele = container_of(buf, liteco_udp_chan_ele_t, buf);
+    if (ret <= 0) {
+        free(ele);
+        return;
+    }
+
     ele->ret = ret;
     switch (peer->sa_family) {
     case AF_INET:
@@ -187,4 +197,11 @@ int liteco_udp_chan_recv(liteco_udp_chan_t *const uchan, liteco_udp_chan_alloc_c
 
 liteco_udp_chan_ele_t *liteco_udp_chan_pop(liteco_udp_chan_t *const uchan, const bool blocked) {
     return liteco_chan_pop(&uchan->chan, blocked);
+}
+
+int liteco_udp_chan_close(liteco_udp_chan_t *const uchan) {
+    liteco_chan_close(&uchan->chan);
+    liteco_udp_close(&uchan->udp);
+
+    return 0;
 }
