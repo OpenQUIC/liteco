@@ -217,3 +217,13 @@ static void liteco_eloop_reg_io(liteco_eloop_t *const eloop, liteco_io_t *const 
 
     epoll_ctl(eloop->epoll_fd, EPOLL_CTL_ADD, io->key, &evt);
 }
+
+int liteco_eloop_close(liteco_eloop_t *const eloop) {
+    if (eloop->closed) {
+        return 0;
+    }
+    eloop->closed = true;
+    liteco_platform_close(eloop->epoll_fd);
+
+    return 0;
+}

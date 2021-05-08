@@ -97,6 +97,13 @@ int liteco_rbt_remove_impl(liteco_rbt_t **const root, liteco_rbt_t **const node)
     return liteco_rbt_err_success;
 }
 
+liteco_rbt_t *liteco_rbt_min_impl(liteco_rbt_t *const root) {
+    liteco_rbt_t *ret = root;
+    while (liteco_rbt_is_not_nil(ret) && liteco_rbt_is_not_nil(ret->rb_l)) { ret = ret->rb_l; }
+
+    return ret;
+}
+
 static inline void __lr(liteco_rbt_t **const root, liteco_rbt_t *const node) {
     liteco_rbt_t *chd = node->rb_r;
     node->rb_r = chd->rb_l;

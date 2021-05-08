@@ -21,8 +21,6 @@
 #include <sys/event.h>
 #include <sys/time.h>
 
-#include <stdio.h>
-
 static bool liteco_async_spin(liteco_async_t *const handler);
 static void liteco_async_io_cb(liteco_eloop_t *const eloop, liteco_io_t *const io, const uint32_t flags);
 static void liteco_eloop_reg_io(liteco_eloop_t *const eloop, liteco_io_t *const io);
@@ -266,4 +264,14 @@ static liteco_heap_cmp_result_t liteco_timer_heap_cmp_cb(liteco_heapnode_t *cons
     }
 
     return LITECO_HEAP_KEEP;
+}
+
+int liteco_eloop_close(liteco_eloop_t *const eloop) {
+    if (eloop->closed) {
+        return 0;
+    }
+    eloop->closed = true;
+    liteco_platform_close(eloop->kqueue_fd);
+
+    return 0;
 }

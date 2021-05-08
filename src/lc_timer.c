@@ -74,3 +74,18 @@ static void liteco_timer_chan_cb(liteco_timer_t *const timer) {
 int liteco_timer_chan_stop(liteco_timer_chan_t *const tchan) {
     return liteco_timer_stop(&tchan->timer);
 }
+
+int liteco_timer_chan_close(liteco_timer_chan_t *const tchan) {
+    liteco_timer_chan_stop(tchan);
+    liteco_chan_close(&tchan->chan);
+
+    return 0;
+}
+
+void *liteco_timer_chan_pop(liteco_timer_chan_t *const tchan, const bool blocked) {
+    return liteco_chan_pop(&tchan->chan, blocked);
+}
+
+liteco_chan_t *liteco_timer_chan(liteco_timer_chan_t *const tchan) {
+    return &tchan->chan;
+}

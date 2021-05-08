@@ -50,6 +50,15 @@ typedef enum liteco_handler_type_e liteco_handler_type_t;
 
 struct liteco_handler_s { LITECO_HANDLER_FIELDS };
 
+typedef union liteco_addr_u liteco_addr_t;
+
+size_t liteco_addr_type_size(const liteco_addr_t *const addr);
+
+union liteco_addr_u {
+    struct sockaddr_in af_inet;
+    struct sockaddr_in6 af_inet6;
+};
+
 enum liteco_async_padding_status_e {
     LITECO_ASYNC_NO_PADDING = 0x00,
     LITECO_ASYNC_WORKING    = 0x01,
@@ -83,12 +92,13 @@ int liteco_timer_stop(liteco_timer_t *const timer);
     liteco_io_t io;               \
     liteco_udp_alloc_cb alloc_cb; \
     liteco_udp_recv_cb recv_cb;   \
+    liteco_addr_t bd_addr;        \
 
 struct liteco_udp_s { LITECO_HANDLER_FIELDS LITECO_UDP_FIELDS };
 
 int liteco_udp_init(liteco_eloop_t *const eloop, liteco_udp_t *const udp);
 int liteco_udp_bind(liteco_udp_t *const udp, const struct sockaddr *const addr);
-int liteco_udp_sendto(liteco_udp_t *const udp, struct sockaddr *const addr, void *const buf, const size_t len);
+int liteco_udp_sendto(liteco_udp_t *const udp, struct sockaddr *const addr, const void *const buf, const size_t len);
 int liteco_udp_recv(liteco_udp_t *const udp, liteco_udp_alloc_cb alloc_cb, liteco_udp_recv_cb recv_cb);
 int liteco_udp_close(liteco_udp_t *const udp);
 
@@ -96,6 +106,7 @@ struct liteco_eloop_s { LITECO_ELOOP_FIELDS };
 
 int liteco_eloop_init(liteco_eloop_t *const eloop);
 int liteco_eloop_run(liteco_eloop_t *const eloop);
+int liteco_eloop_close(liteco_eloop_t *const eloop);
 
 typedef struct liteco_co_s liteco_co_t;
 typedef struct liteco_fin_s liteco_fin_t;
@@ -247,30 +258,30 @@ struct liteco_timer_chan_s {
 int liteco_timer_chan_init(liteco_eloop_t *const eloop, liteco_runtime_t *const rt, liteco_timer_chan_t *const tchan);
 int liteco_timer_chan_start(liteco_timer_chan_t *const tchan, const uint64_t timeout, const uint64_t interval);
 int liteco_timer_chan_stop(liteco_timer_chan_t *const tchan);
+int liteco_timer_chan_close(liteco_timer_chan_t *const tchan);
+void *liteco_timer_chan_pop(liteco_timer_chan_t *const tchan, const bool blocked);
+liteco_chan_t *liteco_timer_chan(liteco_timer_chan_t *const tchan);
 
 struct liteco_udp_chan_s {
     liteco_udp_t udp;
-    liteco_chan_t chan;
+    liteco_chan_t *chan;
 
     liteco_udp_chan_alloc_cb alloc_cb;
 };
 
 struct liteco_udp_chan_ele_s {
-    union {
-        struct sockaddr_in af_inet;
-        struct sockaddr_in6 af_inet6;
-    } addr;
+    liteco_addr_t loc_addr;
+    liteco_addr_t rmt_addr;
 
     int ret;
     size_t b_size;
     uint8_t buf[0];
 };
 
-int liteco_udp_chan_init(liteco_eloop_t *const eloop, liteco_runtime_t *const rt, liteco_udp_chan_t *const uchan);
-int liteco_udp_chan_bind(liteco_udp_chan_t *const uchan, const struct sockaddr *const addr);
-int liteco_udp_chan_sendto(liteco_udp_chan_t *const uchan, struct sockaddr *const addr, void *const buf, const size_t len);
+int liteco_udp_chan_init(liteco_eloop_t *const eloop, liteco_udp_chan_t *const uchan);
+int liteco_udp_chan_bind(liteco_udp_chan_t *const uchan, const struct sockaddr *const addr, liteco_chan_t *const chan);
+int liteco_udp_chan_sendto(liteco_udp_chan_t *const uchan, struct sockaddr *const addr, const void *const buf, const size_t len);
 int liteco_udp_chan_recv(liteco_udp_chan_t *const uchan, liteco_udp_chan_alloc_cb alloc_cb);
-liteco_udp_chan_ele_t *liteco_udp_chan_pop(liteco_udp_chan_t *const uchan, const bool blocked);
 int liteco_udp_chan_close(liteco_udp_chan_t *const uchan);
 
 #endif
