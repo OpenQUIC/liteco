@@ -10,7 +10,14 @@
 #define __LITECO_ARRAY_H__
 
 #include <stdint.h>
+#include <stddef.h>
+#include <sys/cdefs.h>
+#if __linux__
 #include <malloc.h>
+#elif __APPLE__
+#include <stdlib.h>
+#include <sys/malloc.h>
+#endif
 
 typedef struct liteco_array_s liteco_array_t;
 struct liteco_array_s {
@@ -22,7 +29,11 @@ struct liteco_array_s {
 #define liteco_array_get(arr, i) \
     ((arr)->payload + ((arr)->ele_size * (i)))
 
-static inline liteco_array_t *liteco_array_create(uint32_t ele_count, uint32_t ele_size) {
+#ifdef __header_always_inline
+__header_always_inline liteco_array_t *liteco_array_create(uint32_t ele_count, uint32_t ele_size) {
+#else
+__always_inline liteco_array_t *liteco_array_create(uint32_t ele_count, uint32_t ele_size) {
+#endif
     liteco_array_t *arr = malloc(sizeof(liteco_array_t) + ele_count * ele_size);
     if (!arr) {
         return NULL;

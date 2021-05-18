@@ -6,7 +6,7 @@
  *
  */
 
-#include "lc_rbt.h"
+#include "liteco/lc_rbt.h"
 
 const liteco_rbt_t liteco_rbt_nil_instance = {
     .rb_p        = liteco_rbt_nil,
@@ -95,6 +95,13 @@ int liteco_rbt_remove_impl(liteco_rbt_t **const root, liteco_rbt_t **const node)
     *node = ref;
 
     return liteco_rbt_err_success;
+}
+
+liteco_rbt_t *liteco_rbt_min_impl(liteco_rbt_t *const root) {
+    liteco_rbt_t *ret = root;
+    while (liteco_rbt_is_not_nil(ret) && liteco_rbt_is_not_nil(ret->rb_l)) { ret = ret->rb_l; }
+
+    return ret;
 }
 
 static inline void __lr(liteco_rbt_t **const root, liteco_rbt_t *const node) {

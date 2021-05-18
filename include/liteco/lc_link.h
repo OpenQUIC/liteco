@@ -11,12 +11,10 @@
 
 #define LITECO_LINKNODE_BASE \
     liteco_linknode_t *prev; \
-    liteco_linknode_t *next;
+    liteco_linknode_t *next; 
 
 typedef struct liteco_linknode_s liteco_linknode_t;
-struct liteco_linknode_s {
-    LITECO_LINKNODE_BASE
-};
+struct liteco_linknode_s { LITECO_LINKNODE_BASE };
 
 #define liteco_link_init(p) \
     (p)->next = (liteco_linknode_t *) (p); \
@@ -48,7 +46,10 @@ struct liteco_linknode_s {
     (p)->prev->next = (p)->next
 
 #define liteco_link_foreach(e, l) \
-    for ((e) = liteco_link_next((l)); (e) != (l); (e) = liteco_link_next((e)))
+    for ((e) = (typeof(e)) liteco_link_next((l)); (typeof(l)) (e) != (l); (e) = (typeof(e)) liteco_link_next((e)))
+
+#define liteco_link_rforeach(e, l) \
+    for ((e) = (typeof(e)) liteco_link_prev((l)); (typeof(l)) (e) != (l); (e) = (typeof(e)) liteco_link_prev((e)))
 
 #define LITECO_STACK_BASE LITECO_LINKNODE_BASE
 

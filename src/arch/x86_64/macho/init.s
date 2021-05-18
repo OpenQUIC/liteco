@@ -1,10 +1,16 @@
-.weak liteco_context_init;
-liteco_context_init = __context_init;
+/*
+ * Copyright (c) 2021 Gscienty <gaoxiaochuan@hotmail.com>
+ *
+ * Distributed under the MIT software license, see the accompanying
+ * file LICENSE or https://www.opensource.org/licenses/mit-license.php .
+ *
+ */
 
-.global __context_init;
-.align 2;
-.type __context_init, @function;
-__context_init:
+	.section	__TEXT,__text,regular,pure_instructions
+	.globl _liteco_context_init
+	.p2align 4, 0x90
+_liteco_context_init:
+	.cfi_startproc
     /* @param rdi: ctx */
     /* @param rsi: stack */
     /* @param rdx: size */
@@ -28,7 +34,6 @@ __context_init:
 
     ret
 
-.end __context_init;
-.size __context_init,.-__context_init;
+    .cfi_endproc
 
-
+.subsections_via_symbols

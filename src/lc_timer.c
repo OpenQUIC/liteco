@@ -6,47 +6,86 @@
  *
  */
 
-#include "lc_timer.h"
+#include "liteco.h"
+#include "liteco/lc_heap.h"
+#include "platform/internal.h"
+#include <sys/resource.h>
 #include <unistd.h>
 
-static void liteco_timer_cb(liteco_emodule_t *const emodule);
+static void liteco_timer_chan_cb(liteco_timer_t *const timer);
 
-int liteco_timer_init(liteco_eloop_t *const eloop, liteco_timer_t *const timer, liteco_chan_t *const chan) {
-    timer->fd = timerfd_create(CLOCK_REALTIME, TFD_CLOEXEC | TFD_NONBLOCK);
-    timer->cb = liteco_timer_cb;
-    timer->chan = chan;
+int liteco_timer_init(liteco_eloop_t *const eloop, liteco_timer_t *const timer) {
+    liteco_eloop_timer_init(eloop);
 
-    return liteco_eloop_add(eloop, (liteco_emodule_t *) timer);
+    liteco_handler_init(timer, eloop, liteco_handler_type_timer);
+    liteco_heapnode_init(&timer->hp_handle);
+
+    timer->cb = NULL;
+    timer->active = false;
+    timer->stop = false;
+
+    liteco_timer_set_timeout(timer, 0);
+    liteco_timer_set_interval(timer, 0);
+
+    return 0;
 }
 
-int liteco_timer_expire(liteco_timer_t *const timer, const uint64_t timeout, const uint64_t interval) {
-    struct itimerspec spec = {
-        .it_value = {
-            .tv_sec = timeout / (1000 * 1000),
-            .tv_nsec = timeout % (1000 * 1000) * 1000
-        },
-        .it_interval = {
-            .tv_sec = interval / (1000 * 1000),
-            .tv_nsec = interval % (1000 * 1000) * 1000
-        }
-    };
+int liteco_timer_start(liteco_timer_t *const timer, liteco_timer_cb cb, const uint64_t timeout, const uint64_t interval) {
+    timer->stop = false;
+    timer->cb = cb;
 
-    timerfd_settime(timer->fd, 0, &spec, NULL);
-
-    return liteco_timer_err_success;
-}
-
-static void liteco_timer_cb(liteco_emodule_t *const emodule) {
-    liteco_timer_t *const timer = (liteco_timer_t *) emodule;
-
-    uint64_t exp;
-    while (read(timer->fd, &exp, sizeof(uint64_t)) == sizeof(uint64_t) && exp == 1) {
-        liteco_chan_unenforceable_push(timer->chan, NULL);
+    liteco_timer_set_timeout_current(timer);
+    liteco_timer_set_interval(timer, interval);
+    if (timeout == 0) {
+        liteco_timer_add_timeout_interval(timer);
     }
+    else {
+        liteco_timer_add_timeout(timer, timeout);
+    }
+
+    liteco_eloop_timer_add(timer->eloop, timer);
+
+    return 0;
 }
 
-int liteco_timer_close(liteco_timer_t *const timer) {
-    close(timer->fd);
+int liteco_timer_stop(liteco_timer_t *const timer) {
+    timer->stop = true;
+    liteco_eloop_timer_remove(timer->eloop, timer);
+    return 0;
+}
 
-    return liteco_timer_err_success;
+int liteco_timer_chan_init(liteco_eloop_t *const eloop, liteco_runtime_t *const rt, liteco_timer_chan_t *const tchan) {
+    liteco_chan_init(&tchan->chan, 0, rt);
+    liteco_timer_init(eloop, &tchan->timer);
+
+    return 0;
+}
+
+int liteco_timer_chan_start(liteco_timer_chan_t *const tchan, const uint64_t timeout, const uint64_t interval) {
+    return liteco_timer_start(&tchan->timer, liteco_timer_chan_cb, timeout, interval);
+}
+
+static void liteco_timer_chan_cb(liteco_timer_t *const timer) {
+    liteco_timer_chan_t *const tchan = container_of(timer, liteco_timer_chan_t, timer);
+
+    liteco_chan_unenforceable_push(&tchan->chan, NULL);
+}
+
+int liteco_timer_chan_stop(liteco_timer_chan_t *const tchan) {
+    return liteco_timer_stop(&tchan->timer);
+}
+
+int liteco_timer_chan_close(liteco_timer_chan_t *const tchan) {
+    liteco_timer_chan_stop(tchan);
+    liteco_chan_close(&tchan->chan);
+
+    return 0;
+}
+
+void *liteco_timer_chan_pop(liteco_timer_chan_t *const tchan, const bool blocked) {
+    return liteco_chan_pop(&tchan->chan, blocked);
+}
+
+liteco_chan_t *liteco_timer_chan(liteco_timer_chan_t *const tchan) {
+    return &tchan->chan;
 }

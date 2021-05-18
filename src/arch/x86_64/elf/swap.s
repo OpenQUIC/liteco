@@ -1,10 +1,16 @@
-.weak liteco_context_swap;
-liteco_context_swap = __context_swap;
+/*
+ * Copyright (c) 2021 Gscienty <gaoxiaochuan@hotmail.com>
+ *
+ * Distributed under the MIT software license, see the accompanying
+ * file LICENSE or https://www.opensource.org/licenses/mit-license.php .
+ *
+ */
 
-.global __context_swap;
-.align 2;
-.type __context_swap, @function;
-__context_swap:
+.text
+.globl liteco_context_swap
+.type liteco_context_swap,@function
+.align 2
+liteco_context_swap:
     /* @param rdi: from */
     /* @param rsi: to */
     /* void liteco_context_swap(from, to) */
@@ -55,7 +61,4 @@ __context_swap:
     movq 0120(%rsi), %rsi; /* RSI */
 
     ret
-
-.end __context_swap;
-.size __context_swap,.-__context_swap;
-
+.size liteco_context_swap,.-liteco_context_swap

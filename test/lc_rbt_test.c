@@ -1,4 +1,4 @@
-#include "../src/lc_rbt.h"
+#include "liteco/lc_rbt.h"
 #include <stdlib.h>
 #include <sys/malloc.h>
 #include <stdio.h>
