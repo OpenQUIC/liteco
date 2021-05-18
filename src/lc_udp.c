@@ -7,7 +7,6 @@
  */
 
 #include "liteco.h"
-#include "liteco/darwin.h"
 #include "platform/internal.h"
 #include <errno.h>
 #include <fcntl.h>
