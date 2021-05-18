@@ -59,6 +59,8 @@ union liteco_addr_u {
     struct sockaddr_in6 af_inet6;
 };
 
+liteco_addr_t liteco_ipv4(const char *const ip, const uint16_t port);
+
 enum liteco_async_padding_status_e {
     LITECO_ASYNC_NO_PADDING = 0x00,
     LITECO_ASYNC_WORKING    = 0x01,
