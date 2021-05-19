@@ -198,6 +198,12 @@ int liteco_eloop_run(liteco_eloop_t *const eloop) {
     return 0;
 }
 
+int liteco_eloop_udp_add(liteco_eloop_t *const eloop, liteco_udp_t *const udp) {
+    liteco_io_start(eloop, &udp->io, EPOLLIN | EPOLLET);
+
+    return 0;
+}
+
 static void liteco_eloop_reg_io(liteco_eloop_t *const eloop, liteco_io_t *const io) {
     if (liteco_rbt_is_not_nil(liteco_rbt_find(eloop->reg, &io->key))) {
         return;
