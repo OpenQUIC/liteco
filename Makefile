@@ -9,7 +9,7 @@ RM = rm -f
 INCLUDE = -I ./include -I ./src/
 ARFLAGS = rcs
 
-LIB_FILE = liteco.a
+LIB_FILE = libliteco.a
 
 OBJECTS = 
 C_OBJS = 
