@@ -41,7 +41,7 @@ int liteco_io_stop(struct liteco_eloop_s *const eloop, liteco_io_t *const io, co
     liteco_int_rbt_t *reg;    \
     int epoll_fd;             \
     liteco_io_t async_io;     \
-    int async_cnt;            \
+    bool async_inited;        \
     liteco_linknode_t async;  \
     liteco_heap_t timer_heap; \
     liteco_io_t timer_io;     \

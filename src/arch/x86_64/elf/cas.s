@@ -12,18 +12,16 @@
 .align 2
 liteco_cas:
     /* @param rdi: ptr */
-    /* @param rsi: old */
+    /* @param rsi: exp */
     /* @param rdx: nex */
-    /* void liteco_cas(*ptr, old, next) */
+    /* void liteco_cas(*ptr, exp, nex) */
 
-    mov %rdi, %rbx
-    movq %rsi, %rax
-    movq %rdx, %rcx
+    movq 0(%rdi), %rbx 
+    movq %rsi, %rax /* exp */
+    movq %rdx, %rcx /* nex */
 
     lock
-    cmpxchg %cx, 0(%rbx)
-
-    cmp 0(%rbx), %cx
+    cmpxchg %cx, 0(%rdi)
 
     je seteq
     xorq %rax, %rax

@@ -30,7 +30,7 @@ int liteco_eloop_init(liteco_eloop_t *const eloop) {
     eloop->epoll_fd = epoll_create(1);
     eloop->timer_io.key = -1;
 
-    eloop->async_cnt = 0;
+    eloop->async_inited = false;
     liteco_link_init(&eloop->async);
 
     return 0;
@@ -39,7 +39,7 @@ int liteco_eloop_init(liteco_eloop_t *const eloop) {
 int liteco_eloop_async_init(liteco_eloop_t *const eloop) {
     int fd = 0;
 
-    if (eloop->async_cnt != 0) {
+    if (eloop->async_inited) {
         return 0;
     }
 
@@ -49,6 +49,7 @@ int liteco_eloop_async_init(liteco_eloop_t *const eloop) {
 
     liteco_io_init(&eloop->async_io, liteco_async_io_cb, fd);
     liteco_io_start(eloop, &eloop->async_io, EPOLLIN | EPOLLET);
+    eloop->async_inited = true;
 
     return 0;
 }

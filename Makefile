@@ -54,9 +54,6 @@ QUIET_AR = @echo '  ' AR $@;
 $(LIB_FILE): $(OBJECTS)
 	$(QUIET_AR) $(RM) $@ && $(AR) $(ARFLAGS) $@ $^
 
-$(OBJECTS): $(C_OBJS) $(ARM_OBJS)
-
-
 $(C_OBJS): %.o: %.c
 	$(QUIET_CC) $(CC) $(INCLUDE) -o $*.o -c $<
 
