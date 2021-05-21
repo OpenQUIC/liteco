@@ -76,7 +76,8 @@ liteco_rbt_t *liteco_rbt_find_impl(liteco_rbt_t *const root, const void *const k
 int liteco_rbt_remove_impl(liteco_rbt_t **const root, liteco_rbt_t **const node) {
     liteco_rbt_t *ref = *node;
     if (liteco_rbt_is_not_nil(ref->rb_l) && liteco_rbt_is_not_nil(ref->rb_r)) {
-        liteco_rbt_t *nex = __min(ref->rb_r);
+        liteco_rbt_t *nex = __min(ref);
+
         liteco_rbt_t mid;
 
         __assign(root, &mid, nex);
@@ -197,7 +198,7 @@ static void __fix(liteco_rbt_t **const root, liteco_rbt_t *node) {
 }
 
 static liteco_rbt_t *__min(liteco_rbt_t *node) {
-    while (liteco_rbt_is_not_nil(node)) {
+    while (liteco_rbt_is_not_nil(node->rb_l)) {
         node = node->rb_l;
     }
     return node;

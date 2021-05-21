@@ -47,7 +47,7 @@ struct liteco_rbt_s { LITECO_RBT_FIELDS };
 extern const liteco_rbt_t liteco_rbt_nil_instance;
 #define liteco_rbt_nil ((liteco_rbt_t *) &liteco_rbt_nil_instance)
 
-#define liteco_rbt_is_nil(node) (((liteco_rbt_t *) node) == liteco_rbt_nil)
+#define liteco_rbt_is_nil(node) (((liteco_rbt_t *) (node)) == liteco_rbt_nil)
 #define liteco_rbt_is_not_nil(node) !liteco_rbt_is_nil(node)
 
 #define liteco_rbt_init(node) ((node) = (typeof(node)) liteco_rbt_nil)
