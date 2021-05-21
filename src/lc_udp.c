@@ -158,7 +158,7 @@ static void liteco_udp_chan_recv_udp_cb(liteco_udp_t *const udp, int ret, const 
     liteco_udp_chan_t *const uchan = container_of(udp, liteco_udp_chan_t, udp);
     liteco_udp_chan_ele_t *const ele = container_of(buf, liteco_udp_chan_ele_t, buf);
     if (ret <= 0) {
-        free(ele);
+        uchan->recovery_cb(uchan, ele);
         return;
     }
 
@@ -178,6 +178,8 @@ static void liteco_udp_chan_recv_udp_cb(liteco_udp_t *const udp, int ret, const 
 
 int liteco_udp_chan_init(liteco_eloop_t *const eloop, liteco_udp_chan_t *const uchan) {
     uchan->chan = NULL;
+    uchan->alloc_cb = NULL;
+    uchan->recovery_cb = NULL;
     liteco_udp_init(eloop, &uchan->udp);
 
     return 0;
@@ -192,8 +194,9 @@ int liteco_udp_chan_sendto(liteco_udp_chan_t  *const uchan, struct sockaddr *con
     return liteco_udp_sendto(&uchan->udp, addr, buf, len);
 }
 
-int liteco_udp_chan_recv(liteco_udp_chan_t *const uchan, liteco_udp_chan_alloc_cb alloc_cb) {
+int liteco_udp_chan_recv(liteco_udp_chan_t *const uchan, liteco_udp_chan_alloc_cb alloc_cb, liteco_udp_chan_recovery_cb recovery_cb) {
     uchan->alloc_cb = alloc_cb;
+    uchan->recovery_cb = recovery_cb;
 
     return liteco_udp_recv(&uchan->udp, liteco_udp_chan_alloc_udp_cb, liteco_udp_chan_recv_udp_cb);
 }

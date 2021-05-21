@@ -120,6 +120,8 @@ typedef struct liteco_udp_chan_s liteco_udp_chan_t;
 typedef struct liteco_udp_chan_ele_s liteco_udp_chan_ele_t;
 
 typedef void (*liteco_udp_chan_alloc_cb) (liteco_udp_chan_t *const uchan, liteco_udp_chan_ele_t **const ele); 
+typedef void (*liteco_udp_chan_recovery_cb) (liteco_udp_chan_t *const uchan, liteco_udp_chan_ele_t *const ele);
+
 enum liteco_status_e {
     LITECO_STATUS_UNKNOW = 0,
     LITECO_STATUS_STARTING,
@@ -269,6 +271,7 @@ struct liteco_udp_chan_s {
     liteco_chan_t *chan;
 
     liteco_udp_chan_alloc_cb alloc_cb;
+    liteco_udp_chan_recovery_cb recovery_cb;
 };
 
 struct liteco_udp_chan_ele_s {
@@ -283,7 +286,7 @@ struct liteco_udp_chan_ele_s {
 int liteco_udp_chan_init(liteco_eloop_t *const eloop, liteco_udp_chan_t *const uchan);
 int liteco_udp_chan_bind(liteco_udp_chan_t *const uchan, const struct sockaddr *const addr, liteco_chan_t *const chan);
 int liteco_udp_chan_sendto(liteco_udp_chan_t *const uchan, struct sockaddr *const addr, const void *const buf, const size_t len);
-int liteco_udp_chan_recv(liteco_udp_chan_t *const uchan, liteco_udp_chan_alloc_cb alloc_cb);
+int liteco_udp_chan_recv(liteco_udp_chan_t *const uchan, liteco_udp_chan_alloc_cb alloc_cb, liteco_udp_chan_recovery_cb recovery_cb);
 int liteco_udp_chan_close(liteco_udp_chan_t *const uchan);
 
 #endif
