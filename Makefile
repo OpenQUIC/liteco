@@ -21,6 +21,9 @@ PLATFORM =
 ifeq ($(shell uname), Linux)
 	FORMAT = elf
 	PLATFORM = linux
+else ifeq ($(shell uname), Darwin)
+	FORMAT = macho
+	PLATFORM = darwin
 endif
 
 C_OBJS += src/lc_addr.o
