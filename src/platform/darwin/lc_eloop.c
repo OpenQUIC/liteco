@@ -202,6 +202,18 @@ int liteco_eloop_udp_add(liteco_eloop_t *const eloop, liteco_udp_t *const udp) {
     return 0;
 }
 
+int liteco_eloop_stream_add(liteco_eloop_t *const eloop, liteco_stream_t *const stream) {
+    liteco_io_start(eloop, &stream->io, EVFILT_READ);
+
+    return 0;
+}
+
+int liteco_eloop_stream_remove(liteco_eloop_t *const eloop, liteco_stream_t *const stream) {
+    liteco_io_stop(eloop, &stream->io, EVFILT_READ);
+
+    return 0;
+}
+
 int liteco_eloop_run(liteco_eloop_t *const eloop) {
     struct kevent aevt[32];
 

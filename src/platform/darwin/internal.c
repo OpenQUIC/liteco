@@ -74,3 +74,28 @@ int liteco_udp_socket(int domain) {
 
     return fd;
 }
+
+int liteco_pipe_socket() {
+    int fd = socket(AF_UNIX, SOCK_STREAM, 0);
+
+    liteco_platform_nonblock(fd, true);
+    liteco_platform_cloexec(fd, true);
+
+    return fd;
+}
+
+int liteco_platform_accept(int fd) {
+    int peerfd;
+    do {
+        peerfd = accept(fd, NULL, NULL);
+    } while (peerfd == -1 && errno == EINTR);
+
+    if (peerfd == -1) {
+        return -1;
+    }
+
+    liteco_platform_cloexec(fd, true);
+    liteco_platform_nonblock(fd, true);
+
+    return peerfd;
+}

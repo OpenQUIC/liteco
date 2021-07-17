@@ -37,12 +37,21 @@ int liteco_eloop_async_init(liteco_eloop_t *const eloop);
 int liteco_eloop_async_send(liteco_eloop_t *const eloop);
 
 int liteco_udp_socket(int domain);
+int liteco_pipe_socket();
+int liteco_platform_accept(int fd);
 
 int liteco_eloop_timer_init(liteco_eloop_t *const eloop);
 int liteco_eloop_timer_add(liteco_eloop_t *const eloop, liteco_timer_t *const timer);
 int liteco_eloop_timer_remove(liteco_eloop_t *const eloop, liteco_timer_t *const timer);
 
 int liteco_eloop_udp_add(liteco_eloop_t *const eloop, liteco_udp_t *const udp);
+
+int liteco_eloop_stream_add(liteco_eloop_t *const eloop, liteco_stream_t *const stream);
+int liteco_eloop_stream_remove(liteco_eloop_t *const eloop, liteco_stream_t *const stream);
+
+void liteco_server_io_cb(liteco_eloop_t *const eloop, liteco_io_t *const io, const uint32_t flags);
+
+int liteco_pipe_listen(liteco_pipe_t *const pipe, const int backlog, liteco_stream_connection_cb cb);
 
 #define container_of(ptr, type, member) ((type *) ((char *) (ptr) - offsetof(type, member)))
 

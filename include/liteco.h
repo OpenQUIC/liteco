@@ -26,17 +26,23 @@ typedef struct liteco_async_s liteco_async_t;
 typedef struct liteco_runtime_s liteco_runtime_t;
 typedef struct liteco_timer_s liteco_timer_t;
 typedef struct liteco_udp_s liteco_udp_t;
+typedef struct liteco_stream_s liteco_stream_t;
+typedef struct liteco_pipe_s liteco_pipe_t;
 typedef struct liteco_eloop_s liteco_eloop_t;
 
 typedef void (*liteco_async_cb) (liteco_async_t *const async);
 typedef void (*liteco_timer_cb) (liteco_timer_t *const timer);
 typedef void (*liteco_udp_alloc_cb) (liteco_udp_t *const udp, void **const b_ptr, size_t *const b_size);
 typedef void (*liteco_udp_recv_cb) (liteco_udp_t *const udp, int ret, const struct sockaddr *const peer, const void *const buf, const size_t b_size);
+typedef void (*liteco_stream_connection_cb) (liteco_stream_t *const stream, int status);
+typedef void (*liteco_stream_alloc_cb) (liteco_stream_t *const stream, void **const b_ptr, size_t *const b_size);
+typedef void (*liteco_stream_recv_cb) (liteco_stream_t *const stream, int ret, const void *const buf, const size_t b_size);
 
 enum liteco_handler_type_e {
     liteco_handler_type_async = 0,
     liteco_handler_type_timer,
     liteco_handler_type_udp,
+    liteco_handler_type_pipe,
     liteco_handler_type_runtime
 };
 typedef enum liteco_handler_type_e liteco_handler_type_t;
@@ -103,6 +109,30 @@ int liteco_udp_bind(liteco_udp_t *const udp, const struct sockaddr *const addr);
 int liteco_udp_sendto(liteco_udp_t *const udp, struct sockaddr *const addr, const void *const buf, const size_t len);
 int liteco_udp_recv(liteco_udp_t *const udp, liteco_udp_alloc_cb alloc_cb, liteco_udp_recv_cb recv_cb);
 int liteco_udp_close(liteco_udp_t *const udp);
+
+#define LITECO_STREAM_FIELDS         \
+    liteco_io_t io;                  \
+    int accept_fd; \
+    liteco_stream_connection_cb connection_cb; \
+    liteco_stream_alloc_cb alloc_cb; \
+    liteco_stream_recv_cb recv_cb;   \
+
+struct liteco_stream_s { LITECO_HANDLER_FIELDS LITECO_STREAM_FIELDS };
+
+int liteco_stream_init(liteco_eloop_t *const eloop, liteco_stream_t *const stream, const liteco_handler_type_t type);
+int liteco_stream_listen(liteco_stream_t *const stream, const int backlog, liteco_stream_connection_cb cb);
+int liteco_stream_accept(liteco_stream_t *const server, liteco_stream_t *const client);
+int liteco_stream_recv(liteco_stream_t *const stream, liteco_stream_alloc_cb alloc_cb, liteco_stream_recv_cb recv_cb);
+int liteco_stream_send(liteco_stream_t *const stream, const void *const buf, const size_t b_size);
+
+#define LITECO_PIPE_FIELDS         \
+    bool ipc;                      \
+
+struct liteco_pipe_s { LITECO_HANDLER_FIELDS LITECO_STREAM_FIELDS LITECO_PIPE_FIELDS };
+
+int liteco_pipe_init(liteco_eloop_t *const eloop, liteco_pipe_t *const pipe, const bool ipc);
+int liteco_pipe_bind(liteco_pipe_t *const pipe, const char *const name);
+int liteco_pipe_connect(liteco_pipe_t *const pipe, const char *const name);
 
 struct liteco_eloop_s { LITECO_ELOOP_FIELDS };
 
